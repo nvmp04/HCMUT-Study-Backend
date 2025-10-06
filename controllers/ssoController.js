@@ -24,7 +24,7 @@ export async function login(req, res) {
 }
 
 export async function userinfo(req, res) {
-  const authHeader = req.headers;
+  const authHeader = req.headers.authorization;
   const token = authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'missing token' });
   try {
