@@ -74,7 +74,9 @@ export async function getSchedule(req, res){
         }
         const {id} = req.body;
         const schedule = await tutorScheduleClient.findOne({id});
-        res.json({schedule});
+        const appointment = await appointmentClient.find({id: {$regex:id}}).toArray();
+        const status = appointment.map((appt)=>({slotId: appt.slotId, status: appt.status}));
+        res.json({schedule, status});
     }
     catch(err){
         console.error("❌ Error fetching tutors:", err);
@@ -92,9 +94,30 @@ export async function bookSession(req, res){
         if (!success) {
             return res.status(401).json({ error: 'wrong token' });
         }
-        const {id, status, studentName, studentPhone, tutorName, tutorPhone, date,slotId, title, type, location, link, reason} = req.body;
-        await appointmentClient.insertOne({id, status, studentName, studentPhone, tutorName, tutorPhone, date,slotId, title, type, location, link, reason});
+        const {id, status, studentName, studentPhone, tutorName, tutorPhone, date, time, slotId, title, type, location, link, reason} = req.body;
+        await appointmentClient.insertOne({id, status, studentName, studentPhone, tutorName, tutorPhone, date, time, slotId, title, type, location, link, reason});
         res.json({success: true});
+    }
+    catch(err){
+        console.error("❌ Error fetching tutors:", err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+}
+export async function getMySchedule(req, res){
+    try{
+        const authHeader = req.headers.authorization;
+        const token = authHeader.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ error: 'missing token' });
+        }
+        const success = verifySsoToken(token); 
+        if (!success) {
+            return res.status(401).json({ error: 'wrong token' });
+        }
+        const decoded = jwtDecode(token);
+        const {id} = decoded;
+        const appointment = await appointmentClient.find({id: {$regex:id}}).toArray();
+        res.json({appointment});
     }
     catch(err){
         console.error("❌ Error fetching tutors:", err);

@@ -1,9 +1,10 @@
 import express from 'express';
-import { getStudentData, getTutorData, getTutorsData, getSchedule, bookSession } from '../controllers/studentController.js';
+import { getStudentData, getTutorData, getTutorsData, getSchedule, bookSession, getMySchedule } from '../controllers/studentController.js';
 const router = express.Router();
 router.get('/gettutorsdata', getTutorsData);
 router.post('/gettutordata', getTutorData);
 router.get('/getstudentdata', getStudentData);
 router.post('/getschedule', getSchedule);
-router.post('/booksession', bookSession)
+router.post('/booksession', bookSession);
+router.get('/getmyschedule', getMySchedule);
 export default router;
