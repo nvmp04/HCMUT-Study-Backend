@@ -4,7 +4,7 @@ import ssoRouter from './routes/sso.js';
 import studentRouter from './routes/student.js'
 import tutorRouter from './routes/tutor.js'
 import cors from 'cors'
-import { connectDB, studentClient, tutorClient } from './config/db.js';
+import { connectDB, studentClient, tutorClient, tutorScheduleClient } from './config/db.js';
 dotenv.config();
 const app = express();
 app.use(express.json());
