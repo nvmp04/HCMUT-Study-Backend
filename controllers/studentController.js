@@ -1,7 +1,6 @@
-import { appointmentClient, studentClient, tutorClient } from "../config/db.js";
+import { appointmentClient, studentClient, tutorClient, tutorScheduleClient} from "../config/db.js";
 import { verifySsoToken } from "../services/tokenService.js";
 import { jwtDecode } from "jwt-decode";
-import { tutorScheduleClient } from "../config/db.js";
 export async function getTutorsData(req, res) {
     try {
         const authHeader = req.headers.authorization;
@@ -54,7 +53,8 @@ export async function getStudentData(req, res){
         const decoded = jwtDecode(token);
         const {id} = decoded;
         const student = await studentClient.findOne({id});
-        res.json({student});
+        const appointment = await appointmentClient.find({id: {$regex:id}, status: 'accepted'}).toArray();
+        res.json({student, appointment});
     }
     catch(err){
         console.error("❌ Error fetching tutors:", err);
@@ -96,6 +96,17 @@ export async function bookSession(req, res){
         }
         const {id, status, studentName, studentPhone, tutorName, tutorPhone, date, time, slotId, title, type, location, link, reason} = req.body;
         await appointmentClient.insertOne({id, status, studentName, studentPhone, tutorName, tutorPhone, date, time, slotId, title, type, location, link, reason});
+        const io = req.app.get("io");
+        if (io) {
+        io.emit("bookSession", {
+            tutorId: id,
+            slotId,
+            date,
+            time,
+            title,
+            studentName,
+        });
+        }
         res.json({success: true});
     }
     catch(err){
@@ -118,6 +129,66 @@ export async function getMySchedule(req, res){
         const {id} = decoded;
         const appointment = await appointmentClient.find({id: {$regex:id}}).toArray();
         res.json({appointment});
+    }
+    catch(err){
+        console.error("❌ Error fetching tutors:", err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+}
+export async function cancelled(req, res){
+    try{
+        const authHeader = req.headers.authorization;
+        const token = authHeader.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ error: 'missing token' });
+        }
+        const success = verifySsoToken(token); 
+        if (!success) {
+            return res.status(401).json({ error: 'wrong token' });
+        }
+        const decoded = jwtDecode(token);
+        const { id } = decoded;
+        const { status, reason, slotId } = req.body;
+        await appointmentClient.findOneAndUpdate(
+            {
+                id: { $regex: id},
+                slotId: slotId, 
+            },
+            {
+                $set: {
+                status: status,
+                reason: reason
+                },
+            },
+        );
+        res.json({success: true});
+    }
+    catch(err){
+        console.error("❌ Error fetching tutors:", err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+}
+export async function cancelBeforeAccept(req, res){
+    try{
+        const authHeader = req.headers.authorization;
+        const token = authHeader.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ error: 'missing token' });
+        }
+        const success = verifySsoToken(token); 
+        if (!success) {
+            return res.status(401).json({ error: 'wrong token' });
+        }
+        const decoded = jwtDecode(token);
+        const { id } = decoded;
+        const { slotId} = req.body;
+        await appointmentClient.findOneAndDelete(
+          {
+            id: { $regex: id},
+            slotId: slotId, 
+          }
+        );
+        res.json({success: true});
     }
     catch(err){
         console.error("❌ Error fetching tutors:", err);

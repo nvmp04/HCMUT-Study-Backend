@@ -16,7 +16,8 @@ export async function getTutorData(req, res){
         const decoded = jwtDecode(token);
         const {id} = decoded;
         const tutor = await tutorClient.findOne({id});
-        res.json({tutor})
+        const appointment = await appointmentClient.find({id: {$regex:id}, status: 'accepted'}).toArray();
+        res.json({tutor, appointment})
     }
     catch(err){
         console.error("❌ Error fetching tutors:", err);
@@ -92,57 +93,69 @@ export async function addDeleteSlot(req, res) {
       { id },
       { $set: { [day]: times } }
     );
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("tutorScheduleUpdated", { tutorId: id, day, times });
+    }
     res.json({ success: true, times });
   } catch (error) {
     console.error("❌ Lỗi trong addDeleteSlot:", error);
     res.status(500).json({ error: "Internal server error", details: error.message });
   }
 }
-export async function response(req, res){
+export async function acceptOrCancel(req, res){
     try{
-        const authHeader = req.headers.authorization;
-        const token = authHeader.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ error: 'missing token' });
-        }
-        const success = verifySsoToken(token); 
-        if (!success) {
-            return res.status(401).json({ error: 'wrong token' });
-        }
-        const decoded = jwtDecode(token);
-        const { id } = decoded;
-        const { status, slotId, type, detail, reason } = req.body;
-        if(!reason){ 
-          await appointmentClient.findOneAndUpdate(
-            {
-              id: { $regex: id},
-              slotId: slotId, 
+      const authHeader = req.headers.authorization;
+      const token = authHeader.split(' ')[1];
+      if (!token) {
+          return res.status(401).json({ error: 'missing token' });
+      }
+      const success = verifySsoToken(token); 
+      if (!success) {
+          return res.status(401).json({ error: 'wrong token' });
+      }
+      const decoded = jwtDecode(token);
+      const { id } = decoded;
+      const { status, slotId, type, detail, reason } = req.body;
+      if(!reason){ 
+        await appointmentClient.findOneAndUpdate(
+          {
+            id: { $regex: id},
+            slotId: slotId, 
+          },
+          {
+            $set: {
+              status: status,
+              type: type,
+              link: (type==='online') ? detail : '',
+              location: (type==='offline') ? detail : ''
             },
-            {
-              $set: {
-                status: status,
-                type: type,
-                link: (type==='online') ? detail : '',
-                location: (type==='offline') ? detail : ''
-              },
+          },
+        );
+      }
+      else {
+        await appointmentClient.findOneAndUpdate(
+          {
+            id: { $regex: id},
+            slotId: slotId, 
+          },
+          {
+            $set: {
+              status: status,
+              reason: reason
             },
-          );
-        }
-        else {
-          await appointmentClient.findOneAndUpdate(
-            {
-              id: { $regex: id},
-              slotId: slotId, 
-            },
-            {
-              $set: {
-                status: status,
-                reason: reason
-              },
-            },
-          );
-        }
-        res.json({success: true});
+          },
+        );
+      }
+      const io = req.app.get("io");
+      io.emit("appointment-updated", {
+        id,
+        slotId,
+        status,
+        type,
+        reason,
+      });
+      res.json({success: true});
     }
     catch(err){
         console.error("❌ Error fetching tutors:", err);
