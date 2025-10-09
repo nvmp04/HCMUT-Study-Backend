@@ -112,21 +112,36 @@ export async function response(req, res){
         const decoded = jwtDecode(token);
         const { id } = decoded;
         const { status, slotId, type, detail, reason } = req.body;
-        await appointmentClient.findOneAndUpdate(
-          {
-            id: { $regex: id},
-            slotId: slotId, 
-          },
-          {
-            $set: {
-              status: status,
-              type: type,
-              link: (type==='online') ? detail : '',
-              location: (type==='offline') ? detail : '',
-              reason: reason || '' 
+        if(!reason){ 
+          await appointmentClient.findOneAndUpdate(
+            {
+              id: { $regex: id},
+              slotId: slotId, 
             },
-          },
-        );
+            {
+              $set: {
+                status: status,
+                type: type,
+                link: (type==='online') ? detail : '',
+                location: (type==='offline') ? detail : ''
+              },
+            },
+          );
+        }
+        else {
+          await appointmentClient.findOneAndUpdate(
+            {
+              id: { $regex: id},
+              slotId: slotId, 
+            },
+            {
+              $set: {
+                status: status,
+                reason: reason
+              },
+            },
+          );
+        }
         res.json({success: true});
     }
     catch(err){
