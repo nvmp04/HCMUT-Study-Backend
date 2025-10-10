@@ -164,28 +164,32 @@ export async function acceptOrCancel(req, res){
 }
 export async function decline(req, res){
     try{
-        const authHeader = req.headers.authorization;
-        const token = authHeader.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ error: 'missing token' });
+      const authHeader = req.headers.authorization;
+      const token = authHeader.split(' ')[1];
+      if (!token) {
+          return res.status(401).json({ error: 'missing token' });
+      }
+      const success = verifySsoToken(token); 
+      if (!success) {
+          return res.status(401).json({ error: 'wrong token' });
+      }
+      const decoded = jwtDecode(token);
+      const { id } = decoded;
+      const { reason, slotId} = req.body;
+      await appointmentClient.findOneAndDelete(
+        {
+          id: { $regex: id},
+          slotId: slotId, 
         }
-        const success = verifySsoToken(token); 
-        if (!success) {
-            return res.status(401).json({ error: 'wrong token' });
-        }
-        const decoded = jwtDecode(token);
-        const { id } = decoded;
-        const { reason, slotId} = req.body;
-        await appointmentClient.findOneAndDelete(
-          {
-            id: { $regex: id},
-            slotId: slotId, 
-          }
-        );
-        res.json({success: true});
+      );
+      const io = req.app.get("io");
+      io.emit("decline", {
+        tutorId: id
+      });
+      res.json({success: true});
     }
     catch(err){
-        console.error("❌ Error fetching tutors:", err);
-        return res.status(500).json({ error: 'Internal server error' });
+      console.error("❌ Error fetching tutors:", err);
+      return res.status(500).json({ error: 'Internal server error' });
     }
 }

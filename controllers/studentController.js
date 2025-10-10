@@ -161,6 +161,8 @@ export async function cancelled(req, res){
                 },
             },
         );
+        const io = req.app.get("io");
+        io.emit("studentcancel", { slotId, studentId: id });
         res.json({success: true});
     }
     catch(err){
@@ -188,6 +190,8 @@ export async function cancelBeforeAccept(req, res){
             slotId: slotId, 
           }
         );
+        const io = req.app.get("io");
+        io.emit("cancelbeforestart", { slotId, studentId: id });
         res.json({success: true});
     }
     catch(err){
