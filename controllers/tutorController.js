@@ -176,15 +176,18 @@ export async function decline(req, res){
       const decoded = jwtDecode(token);
       const { id } = decoded;
       const { reason, slotId} = req.body;
-      await appointmentClient.findOneAndDelete(
+      const appt = await appointmentClient.findOneAndDelete(
         {
           id: { $regex: id},
           slotId: slotId, 
         }
       );
+      const studentId = appt.id.slice(7);
       const io = req.app.get("io");
       io.emit("decline", {
-        tutorId: id
+        tutorId: id,
+        slotId: slotId,
+        studentId: studentId
       });
       res.json({success: true});
     }
