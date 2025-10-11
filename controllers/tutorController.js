@@ -117,8 +117,9 @@ export async function acceptOrCancel(req, res){
       const decoded = jwtDecode(token);
       const { id } = decoded;
       const { status, slotId, type, detail, reason } = req.body;
+      let appt, studentId;
       if(!reason){ 
-        await appointmentClient.findOneAndUpdate(
+        appt = await appointmentClient.findOneAndUpdate(
           {
             id: { $regex: id},
             slotId: slotId, 
@@ -132,28 +133,43 @@ export async function acceptOrCancel(req, res){
             },
           },
         );
+        studentId = appt.id.slice(7);
       }
       else {
-        await appointmentClient.findOneAndUpdate(
+        const apptDoc = await appointmentClient.findOne({
+          id: { $regex: id },
+          slotId: slotId,
+        });
+        studentId = apptDoc.id.slice(7);
+        appt = await appointmentClient.findOneAndUpdate(
           {
-            id: { $regex: id},
-            slotId: slotId, 
+            _id: apptDoc._id, 
           },
           {
             $set: {
+              id: studentId,
               status: status,
-              reason: reason
+              reason: reason,
             },
           },
         );
       }
+      const tutorName = appt.tutorName;
       const io = req.app.get("io");
-      io.emit("appointment-updated", {
+      io.emit("appointment-updated", reason ? {
         id,
+        studentId,
+        tutorId: id,
+        name: tutorName,
         slotId,
-        status,
-        type,
+        type: "cancelled",
         reason,
+      }:{
+        id, 
+        studentId,
+        name: tutorName,
+        slotId,
+        type: "accepted"
       });
       res.json({success: true});
     }
@@ -183,11 +199,15 @@ export async function decline(req, res){
         }
       );
       const studentId = appt.id.slice(7);
+      const {tutorName} = appt;
       const io = req.app.get("io");
       io.emit("decline", {
         tutorId: id,
+        name: tutorName,
         slotId: slotId,
-        studentId: studentId
+        studentId: studentId, 
+        type: 'declined',
+        reason
       });
       res.json({success: true});
     }

@@ -96,15 +96,17 @@ export async function bookSession(req, res){
         }
         const {id, status, studentName, studentPhone, tutorName, tutorPhone, date, time, slotId, title, type, location, link, reason} = req.body;
         await appointmentClient.insertOne({id, status, studentName, studentPhone, tutorName, tutorPhone, date, time, slotId, title, type, location, link, reason});
+        const tutorId = id.slice(0, 7);
         const io = req.app.get("io");
         if (io) {
-        io.emit("bookSession", {
-            tutorId: id,
+        io.emit("booksession", {
+            tutorId,
             slotId,
             date,
             time,
             title,
-            studentName,
+            name: studentName,
+            type: "booked"
         });
         }
         res.json({success: true});
@@ -149,20 +151,31 @@ export async function cancelled(req, res){
         const decoded = jwtDecode(token);
         const { id } = decoded;
         const { status, reason, slotId } = req.body;
-        await appointmentClient.findOneAndUpdate(
+        const appt = await appointmentClient.findOneAndUpdate(
             {
                 id: { $regex: id},
                 slotId: slotId, 
             },
             {
                 $set: {
+                id: id,
                 status: status,
                 reason: reason
                 },
             },
         );
+        const tutorId = appt.id.slice(0, 7);
+        const {studentName} = appt;
         const io = req.app.get("io");
-        io.emit("studentcancel", { slotId, studentId: id });
+        io.emit("studentcancel", 
+        { 
+            id, 
+            tutorId,
+            name: studentName,
+            slotId,
+            type: "cancelled",
+            reason,
+       });
         res.json({success: true});
     }
     catch(err){
@@ -184,14 +197,20 @@ export async function cancelBeforeAccept(req, res){
         const decoded = jwtDecode(token);
         const { id } = decoded;
         const { slotId} = req.body;
-        await appointmentClient.findOneAndDelete(
+        const appt = await appointmentClient.findOneAndDelete(
           {
             id: { $regex: id},
             slotId: slotId, 
           }
         );
+        const tutorId = appt.id.slice(0, 7);
         const io = req.app.get("io");
-        io.emit("cancelbeforestart", { slotId, studentId: id });
+        io.emit("cancelbeforeaccept", 
+        { 
+            slotId, 
+            studentId: id, 
+            tutorId 
+        });
         res.json({success: true});
     }
     catch(err){

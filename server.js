@@ -7,7 +7,7 @@ import cors from 'cors';
 import ssoRouter from './routes/sso.js';
 import studentRouter from './routes/student.js';
 import tutorRouter from './routes/tutor.js';
-import { connectDB } from './config/db.js';
+import { accountClient, connectDB, tutorClient, tutorScheduleClient } from './config/db.js';
 import { initCronJobs } from './jobs/cronJobs.js';
 
 dotenv.config();
