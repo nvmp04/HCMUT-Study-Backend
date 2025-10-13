@@ -1,5 +1,5 @@
 import express from 'express';
-import { getStudentData, getTutorData, getTutorsData, getSchedule, bookSession, getMySchedule, cancelled, cancelBeforeAccept } from '../controllers/studentController.js';
+import { getStudentData, getTutorData, getTutorsData, getSchedule, bookSession, getMySchedule, cancelled, cancelBeforeAccept, deleteCancelled } from '../controllers/studentController.js';
 const router = express.Router();
 router.get('/gettutorsdata', getTutorsData);
 router.post('/gettutordata', getTutorData);
@@ -9,4 +9,5 @@ router.post('/booksession', bookSession);
 router.get('/getmyschedule', getMySchedule);
 router.put('/cancelled', cancelled);
 router.delete('/cancelbeforeaccept', cancelBeforeAccept);
+router.delete('/deletecancelled', deleteCancelled)
 export default router;
