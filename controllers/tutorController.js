@@ -159,6 +159,7 @@ export async function acceptOrCancel(req, res){
       io.emit("appointment-updated", reason ? {
         id,
         studentId,
+        title: appt.title,
         tutorId: id,
         name: tutorName,
         slotId,
@@ -167,6 +168,7 @@ export async function acceptOrCancel(req, res){
       }:{
         id, 
         studentId,
+        title: appt.title,
         name: tutorName,
         slotId,
         type: "accepted"
@@ -203,6 +205,7 @@ export async function decline(req, res){
       const io = req.app.get("io");
       io.emit("decline", {
         tutorId: id,
+        title: appt.title,
         name: tutorName,
         slotId: slotId,
         studentId: studentId, 

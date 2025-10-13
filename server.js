@@ -7,7 +7,8 @@ import cors from 'cors';
 import ssoRouter from './routes/sso.js';
 import studentRouter from './routes/student.js';
 import tutorRouter from './routes/tutor.js';
-import { accountClient, connectDB, tutorClient, tutorScheduleClient } from './config/db.js';
+import notificationRouter from './routes/notification.js'
+import { connectDB } from './config/db.js';
 import { initCronJobs } from './jobs/cronJobs.js';
 
 dotenv.config();
@@ -26,6 +27,7 @@ app.set('io', io);
 app.use('/sso', ssoRouter);
 app.use('/student', studentRouter);
 app.use('/tutor', tutorRouter);
+app.use('/notification', notificationRouter)
 initCronJobs();
 
 io.on('connection', (socket) => {

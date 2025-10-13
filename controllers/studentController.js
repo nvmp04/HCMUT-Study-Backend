@@ -115,6 +115,7 @@ export async function bookSession(req, res) {
         date,
         time,
         title,
+        reason,
         name: studentName,
         type: "booked",
       });
@@ -215,7 +216,6 @@ export async function deleteCancelled(req, res) {
     try{
         const token = checkAuth(req, res);
         if(!token) return;
-        const decoded = jwtDecode(token);
         const {_id} = req.body;
         await appointmentClient.findOneAndDelete({_id: new ObjectId(_id)})
         res.json({success: true});
