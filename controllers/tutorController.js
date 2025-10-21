@@ -1,221 +1,201 @@
-import { jwtDecode } from "jwt-decode";
-import { appointmentClient, tutorClient, tutorScheduleClient } from "../config/db.js";
-import { verifySsoToken } from "../services/tokenService.js";
+import { authService } from "../services/authService.js";
+import { appointmentService } from "../services/appointmentService.js";
+import { scheduleService } from "../services/scheduleService.js";
+import { notificationService } from "../services/notificationService.js";
+import { tutorRepository } from "../repositories/tutorRepository.js";
+import { unsuccessfulService } from "../services/unsuccessfulService.js";
+import { reportService } from "../services/reportService.js";
 
-export async function getTutorData(req, res){
-    try{
-        const authHeader = req.headers.authorization;
-        const token = authHeader.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ error: 'missing token' });
-        }
-        const success = verifySsoToken(token); 
-        if (!success) {
-            return res.status(401).json({ error: 'wrong token' });
-        }
-        const decoded = jwtDecode(token);
-        const {id} = decoded;
-        const tutor = await tutorClient.findOne({id});
-        const appointment = await appointmentClient.find({id: {$regex:id}, status: 'accepted'}).toArray();
-        res.json({tutor, appointment})
-    }
-    catch(err){
-        console.error("❌ Error fetching tutors:", err);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
+/**
+ * GET /tutor/data
+ * Lấy thông tin tutor và appointments đã accepted
+ */
+export async function getTutorData(req, res) {
+  try {
+    const tutorId = authService.authenticateRequest(req, res);
+    console.log(tutorId)
+    if (!tutorId) return; 
+    const tutor = await tutorRepository.findById(tutorId);
+    const appointment = await appointmentService.getAppointmentsByTutor(tutorId, 'accepted');
+
+    res.json({ tutor, appointment });
+  } catch (err) {
+    console.error("❌ Error in getTutorData:", err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 }
-export async function getSchedule(req, res){
-    try{
-        const authHeader = req.headers.authorization;
-        const token = authHeader.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ error: 'missing token' });
-        }
-        const success = verifySsoToken(token); 
-        if (!success) {
-            return res.status(401).json({ error: 'wrong token' });
-        }
-        const decoded = jwtDecode(token);
-        const {id} = decoded;
-        const schedule = await tutorScheduleClient.findOne({id});
-        const appointment = await appointmentClient.find({id: {$regex:id}}).toArray();
-        res.json({schedule, appointment});
-    }
-    catch(err){
-        console.error("❌ Error fetching tutors:", err);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
+
+/**
+ * GET /tutor/schedule
+ * Lấy schedule và tất cả appointments của tutor
+ */
+export async function getSchedule(req, res) {
+  try {
+    // Authenticate
+    const tutorId = authService.authenticateRequest(req, res);
+    if (!tutorId) return;
+
+    // Get data
+    const schedule = await scheduleService.getTutorSchedule(tutorId);
+    const appointment = await appointmentService.getAppointmentsByTutor(tutorId);
+
+    res.json({ schedule, appointment });
+  } catch (err) {
+    console.error("❌ Error in getSchedule:", err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 }
+
+/**
+ * POST /tutor/schedule/slot
+ * Thêm hoặc xóa slot trong schedule
+ */
 export async function addDeleteSlot(req, res) {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ error: "missing token" });
-    }
-    const token = authHeader.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ error: "missing token" });
-    }
-    const success = verifySsoToken(token);
-    if (!success) {
-      return res.status(401).json({ error: "wrong token" });
-    }
-    const decoded = jwtDecode(token);
-    const { id } = decoded;
+    const tutorId = authService.authenticateRequest(req, res);
+    if (!tutorId) return;
+
     const { day, time, type } = req.body;
-    if (!day || !time || !type) {
-      return res.status(400).json({ error: "missing day, time or type" });
-    }
-    const doc = await tutorScheduleClient.findOne({ id });
-    if (!doc) {
-      return res.status(404).json({ error: "Tutor schedule not found" });
-    }
-    let times = doc[day] || [];
-    if (type === "add") {
-      if (!times.includes(time)) {
-        times.push(time);
-      }
-      times.sort((a, b) => {
-        const [startA] = a.split(" - ");
-        const [startB] = b.split(" - ");
-        const [hA, mA] = startA.split(":").map(Number);
-        const [hB, mB] = startB.split(":").map(Number);
-        return hA * 60 + mA - (hB * 60 + mB);
-      });
-    } 
-    else if (type === "delete") {
-      times = times.filter(t => t !== time);
-    } 
-    else {
-      return res.status(400).json({ error: "Invalid type (must be add or delete)" });
-    }
-    await tutorScheduleClient.updateOne(
-      { id },
-      { $set: { [day]: times } }
-    );
+
+    // Business logic
+    const result = await scheduleService.addOrDeleteSlot(tutorId, day, time, type);
+
+    // Emit socket event
     const io = req.app.get("io");
     if (io) {
-      io.emit("tutorScheduleUpdated", { tutorId: id, day, times });
+      io.emit("tutorScheduleUpdated", result);
     }
-    res.json({ success: true, times });
+
+    res.json({ success: true, times: result.times });
   } catch (error) {
-    console.error("❌ Lỗi trong addDeleteSlot:", error);
+    console.error("❌ Error in addDeleteSlot:", error);
+    
+    // Handle specific errors
+    if (error.message.includes('Missing required fields')) {
+      return res.status(400).json({ error: error.message });
+    }
+    if (error.message.includes('Invalid type')) {
+      return res.status(400).json({ error: error.message });
+    }
+    if (error.message.includes('not found')) {
+      return res.status(404).json({ error: error.message });
+    }
+
     res.status(500).json({ error: "Internal server error", details: error.message });
   }
 }
-export async function acceptOrCancel(req, res){
-    try{
-      const authHeader = req.headers.authorization;
-      const token = authHeader.split(' ')[1];
-      if (!token) {
-          return res.status(401).json({ error: 'missing token' });
-      }
-      const success = verifySsoToken(token); 
-      if (!success) {
-          return res.status(401).json({ error: 'wrong token' });
-      }
-      const decoded = jwtDecode(token);
-      const { id } = decoded;
-      const { status, slotId, type, detail, reason } = req.body;
-      let appt, studentId;
-      if(!reason){ 
-        appt = await appointmentClient.findOneAndUpdate(
-          {
-            id: { $regex: id},
-            slotId: slotId, 
-          },
-          {
-            $set: {
-              status: status,
-              type: type,
-              link: (type==='online') ? detail : '',
-              location: (type==='offline') ? detail : ''
-            },
-          },
-        );
-        studentId = appt.id.slice(7);
-      }
-      else {
-        const apptDoc = await appointmentClient.findOne({
-          id: { $regex: id },
-          slotId: slotId,
-        });
-        studentId = apptDoc.id.slice(7);
-        appt = await appointmentClient.findOneAndUpdate(
-          {
-            _id: apptDoc._id, 
-          },
-          {
-            $set: {
-              id: studentId,
-              status: status,
-              reason: reason,
-            },
-          },
-        );
-      }
-      const tutorName = appt.tutorName;
-      const io = req.app.get("io");
-      io.emit("appointment-updated", reason ? {
-        id,
-        studentId,
-        title: appt.title,
-        tutorId: id,
-        name: tutorName,
-        slotId,
-        type: "cancelled",
-        reason,
-      }:{
-        id, 
-        studentId,
-        title: appt.title,
-        name: tutorName,
-        slotId,
-        type: "accepted"
-      });
-      res.json({success: true});
+
+/**
+ * POST /tutor/appointment/accept-or-cancel
+ * Accept hoặc cancel appointment
+ */
+export async function acceptOrCancel(req, res) {
+  try {
+    // Authenticate
+    const tutorId = authService.authenticateRequest(req, res);
+    if (!tutorId) return;
+
+    const { _id, slotId, type, detail, reason } = req.body;
+    let result;
+
+    if (!reason) {
+      // Accept appointment
+      result = await appointmentService.acceptAppointment(tutorId, _id, slotId, type, detail);
+    } else {
+      // Cancel appointment
+      result = await appointmentService.cancelAppointment(tutorId, _id, slotId, reason);
+      await unsuccessfulService.addCancelSchedule(tutorId, slotId, reason);
     }
-    catch(err){
-        console.error("❌ Error fetching tutors:", err);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
-}
-export async function decline(req, res){
-    try{
-      const authHeader = req.headers.authorization;
-      const token = authHeader.split(' ')[1];
-      if (!token) {
-          return res.status(401).json({ error: 'missing token' });
-      }
-      const success = verifySsoToken(token); 
-      if (!success) {
-          return res.status(401).json({ error: 'wrong token' });
-      }
-      const decoded = jwtDecode(token);
-      const { id } = decoded;
-      const { reason, slotId} = req.body;
-      const appt = await appointmentClient.findOneAndDelete(
-        {
-          id: { $regex: id},
-          slotId: slotId, 
-        }
-      );
-      const studentId = appt.id.slice(7);
-      const {tutorName} = appt;
-      const io = req.app.get("io");
-      io.emit("decline", {
-        tutorId: id,
-        title: appt.title,
-        name: tutorName,
+
+    // Emit socket events
+    const io = req.app.get("io");
+    if (io) {
+      // Emit appointment update
+      const eventData = {
+        id: tutorId,
+        studentId: result.studentId,
+        title: result.appointment.title,
+        tutorId: tutorId,
+        name: result.appointment.tutorName,
         slotId: slotId,
-        studentId: studentId, 
+        type: result.eventType
+      };
+
+      if (reason) {
+        eventData.reason = reason;
+      }
+
+      io.emit("appointment-updated", eventData);
+      notificationService.emitNotification(io, result.studentId);
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error in acceptOrCancel:", err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+/**
+ * POST /tutor/appointment/decline
+ * Decline (delete) appointment
+ */
+export async function decline(req, res) {
+  try {
+    // Authenticate
+    const tutorId = authService.authenticateRequest(req, res);
+    if (!tutorId) return;
+
+    const { _id, reason, slotId } = req.body;
+    const result = await appointmentService.declineAppointment(_id, tutorId, slotId, reason);
+    await unsuccessfulService.addDeclineSchedule(tutorId, slotId, reason);
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("decline", {
+        tutorId: tutorId,
+        title: result.appointment.title,
+        name: result.appointment.tutorName,
+        slotId: slotId,
+        studentId: result.studentId,
         type: 'declined',
         reason
       });
-      res.json({success: true});
+      notificationService.emitNotification(io, result.studentId);
     }
-    catch(err){
-      console.error("❌ Error fetching tutors:", err);
-      return res.status(500).json({ error: 'Internal server error' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error in decline:", err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+export async function getAppointments(req, res){
+  try{
+    const tutorId = authService.authenticateRequest(req, res);
+    if(!tutorId) return;
+    const appointments = await appointmentService.getAppointmentsByTutor(tutorId);
+    res.json({ appointment: appointments });
+  }
+  catch(err){
+    console.error("❌ Error in get appointments:", err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+export async function reportAppointment(req, res){
+  try{
+    const tutorId = authService.authenticateRequest(req, res);
+    if(!tutorId) return;
+    const { report } = req.body;
+    const result = await appointmentService.reportAppointment(report.sessionId, report);
+    const {studentId, tutorName, title, slotId} = result;
+    await reportService.createReport(studentId, tutorName, title, slotId, report);
+    const io = req.app.get("io");
+    if (io) {
+      notificationService.emitNotification(io, studentId);
     }
+    res.json({success: true})
+  }
+  catch(err){
+    console.error("❌ Error in report appointments:", err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 }

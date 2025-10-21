@@ -1,43 +1,13 @@
-import { jwtDecode } from "jwt-decode";
-import { ObjectId } from "mongodb";
-import { notificationClient } from "../config/db.js";
-import { checkAuth } from "../utils/checkAuth.js";
-
-export async function addNotification(req, res) {
-  try {
-    const token = checkAuth(req, res);
-    if (!token) return;
-    const { notification } = req.body;
-    if (!notification) {
-      return res.status(400).json({ error: "Thiếu dữ liệu notification" });
-    }
-    await notificationClient.insertOne(notification);
-    const io = req.app.get("io");
-    if (io) {
-      io.emit("notification", {
-        notifId: notification.id
-      });
-    }
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Error add notification:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
+import { authService } from "../services/authService.js";
+import { notificationService } from "../services/notificationService.js";
 
 export async function getNotifications(req, res) {
   try {
-    const token = checkAuth(req, res);
-    if (!token) return;
-    const decoded = jwtDecode(token);
-    const { id } = decoded;
-    const notifications = await notificationClient
-      .find({ id })
-      .sort({ time: -1 })
-      .toArray();
-
+    const id = authService.authenticateRequest(req, res);
+    const notifications = await notificationService.getNotificationById(id);
     res.json({ notifications });
-  } catch (err) {
+  } 
+  catch (err) {
     console.error("Error fetching notifications:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -45,22 +15,12 @@ export async function getNotifications(req, res) {
 
 export async function readNotification(req, res) {
   try {
-    const token = checkAuth(req, res);
-    if (!token) return;
-    const decoded = jwtDecode(token);
-    const {id} = decoded;
-    const { _id } = req.body;
-    await notificationClient.findOneAndUpdate(
-      { _id: new ObjectId(_id) },
-      { $set: { read: true } },
-      { returnDocument: "after" }
-    );
-    const io = req.app.get("io");
-    if (io) {
-      io.emit("notification", {
-        notifId: id
-      });
+    const token = authService.verifyToken(req);
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
+    const { _id } = req.body;
+    await notificationService.readNotification(_id);
     res.json({ success: true });
   } catch (err) {
     console.error("Error read notification:", err);
@@ -70,10 +30,12 @@ export async function readNotification(req, res) {
 
 export async function deleteNotification(req, res) {
   try {
-    const token = checkAuth(req, res);
-    if (!token) return;
+    const token = authService.verifyToken(req);
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { _id } = req.body;
-    await notificationClient.deleteOne({ _id: new ObjectId(_id) });
+    await notificationService.deleteNotification(_id);
     res.json({ success: true });
   } catch (err) {
     console.error("Error delete notification:", err);
