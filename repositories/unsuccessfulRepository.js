@@ -7,10 +7,12 @@ export class UnsuccessfulRepository {
   async findAllStudent() {
     return await unsuccessfulClient.find({role: 'student'}).toArray();
   }
-  async pushCancelSchedule(id, schedule) {
+  async pushCancelSchedule(id, role, schedule) {
     return await unsuccessfulClient.updateOne(
       { id },
-      { $push: { cancelSchedule: schedule } },
+      { $push: { cancelSchedule: schedule }, 
+        $set: {role}
+      },
       { upsert: true }
     );
   }
@@ -18,10 +20,14 @@ export class UnsuccessfulRepository {
   async pushDeclineSchedule(id, schedule) {
     return await unsuccessfulClient.updateOne(
       { id },
-      { $push: { declineSchedule: schedule } },
+      {
+        $push: { declineSchedule: schedule },
+        $set: { role: 'tutor' }
+      },
       { upsert: true }
     );
   }
+
 
   async deleteCancelSchedule(id, scheduleId) {
     return await unsuccessfulClient.updateOne(

@@ -137,9 +137,8 @@ export async function cancelled(req, res) {
     const studentId = authService.authenticateRequest(req, res);
     if (!studentId) return;
     const { slotId, reason, _id } = req.body;
-    console.log(slotId)
     const result = await appointmentService.cancelByStudent(studentId, _id, slotId, reason);
-    await unsuccessfulService.addCancelSchedule(studentId, slotId, reason);
+    await unsuccessfulService.addCancelSchedule(studentId, 'student', slotId, reason);
     const io = req.app.get("io");
     if (io) {
       io.emit("studentcancel", {
@@ -232,7 +231,6 @@ export async function AIgenerate(req, res){
   try{
     const id = authService.authenticateRequest(req, res);
     const {field, interests, level, goal, hoursPerWeek, subjectName} = req.body;
-    console.log(subjectName);
     let roadmap;
     if(subjectName !== ''){
       roadmap = await aiService.generateSubjectRoadmap(subjectName, level, hoursPerWeek, goal);

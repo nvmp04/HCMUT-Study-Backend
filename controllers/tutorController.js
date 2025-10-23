@@ -13,7 +13,6 @@ import { reportService } from "../services/reportService.js";
 export async function getTutorData(req, res) {
   try {
     const tutorId = authService.authenticateRequest(req, res);
-    console.log(tutorId)
     if (!tutorId) return; 
     const tutor = await tutorRepository.findById(tutorId);
     const appointment = await appointmentService.getAppointmentsByTutor(tutorId, 'accepted');
@@ -104,7 +103,7 @@ export async function acceptOrCancel(req, res) {
     } else {
       // Cancel appointment
       result = await appointmentService.cancelAppointment(tutorId, _id, slotId, reason);
-      await unsuccessfulService.addCancelSchedule(tutorId, slotId, reason);
+      await unsuccessfulService.addCancelSchedule(tutorId, 'tutor', slotId, reason);
     }
 
     // Emit socket events
@@ -112,6 +111,7 @@ export async function acceptOrCancel(req, res) {
     if (io) {
       // Emit appointment update
       const eventData = {
+        _id,
         id: tutorId,
         studentId: result.studentId,
         title: result.appointment.title,
@@ -152,6 +152,7 @@ export async function decline(req, res) {
     const io = req.app.get("io");
     if (io) {
       io.emit("decline", {
+        _id,
         tutorId: tutorId,
         title: result.appointment.title,
         name: result.appointment.tutorName,

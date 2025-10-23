@@ -7,9 +7,9 @@ export class UnsuccessfulService {
   async getAllStudentUnsuccessfulSchedules() {
     return await unsuccessfulRepository.findAllStudent();
   }
-  async addCancelSchedule(id, date, reason) {
+  async addCancelSchedule(id, role, date, reason) {
     const schedule = { date, reason, createdAt: new Date() };
-    return await unsuccessfulRepository.pushCancelSchedule(id, schedule);
+    return await unsuccessfulRepository.pushCancelSchedule(id, role, schedule);
   }
 
   async addDeclineSchedule(id, date, reason) {
