@@ -10,6 +10,7 @@ import ssoRouter from './routes/sso.js';
 import studentRouter from './routes/student.js';
 import tutorRouter from './routes/tutor.js';
 import notificationRouter from './routes/notification.js';
+import libraryRouter from './routes/library.js'
 import { connectDB } from './config/db.js';
 import { initCronJobs } from './jobs/cronJobs.js';
 
@@ -72,6 +73,7 @@ app.use('/admin', adminRouter);
 app.use('/student', studentRouter);
 app.use('/tutor', tutorRouter);
 app.use('/notification', notificationRouter);
+app.use('/library', libraryRouter);
 // Start server
 
 const PORT = process.env.PORT || 5000;

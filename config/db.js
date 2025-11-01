@@ -3,12 +3,12 @@ import { MongoClient } from "mongodb";
 const uri = "mongodb+srv://minhphu2462004_db_user:phudeptrai04@clouddata.n345wgk.mongodb.net/?retryWrites=true&w=majority&appName=CloudData";
 const client = new MongoClient(uri);
 
-export let accountClient, studentClient, tutorClient, tutorScheduleClient, appointmentClient, notificationClient, unsuccessfulClient, reportClient, roadmapClient;
+export let accountClient, studentClient, tutorClient, tutorScheduleClient, appointmentClient, notificationClient, unsuccessfulClient, reportClient, roadmapClient, documentClient;
 let database;
 export async function connectDB() {
   try {
     await client.connect();
-    console.log("✅ Connected to MongoDB Atlas");
+    console.log(" Connected to MongoDB Atlas");
 
     database = client.db("HCMUT-Study");
     accountClient = database.collection("account");
@@ -20,7 +20,8 @@ export async function connectDB() {
     unsuccessfulClient = database.collection('weeklyUnsuccessfulSchedules');
     reportClient = database.collection('report');
     roadmapClient = database.collection('roadmap');
+    documentClient = database.collection('document');
   } catch (err) {
-    console.log(`❌ Can't connect to MongoDB: ${err}`);
+    console.log(` Can't connect to MongoDB: ${err}`);
   }
 }

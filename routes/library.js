@@ -1,18 +1,18 @@
-const express = require('express');
+import express from 'express'
 const router = express.Router();
-const documentController = require('../controllers/documentController');
-const { checkAuth } = require('../utils/checkAuth');
-const multer = require('multer');
+import { checkAuth } from '../utils/checkAuth.js';
+import multer from 'multer';
+import { deleteDocument, getAllDocuments, getDocumentById, updateDocument, uploadDocument } from '../controllers/documentController.js';
+
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Public routes
-router.get('/documents', documentController.getAllDocuments);
-router.get('/documents/:id', documentController.getDocumentById);
+router.get('/documents', getAllDocuments);
+router.get('/documents/:id', getDocumentById);
 
 // Protected routes - require authentication
-router.use(checkAuth);
-router.post('/documents', upload.single('file'), documentController.uploadDocument);
-router.put('/documents/:id', documentController.updateDocument);
-router.delete('/documents/:id', documentController.deleteDocument);
+router.post('/documents', upload.single('file'), uploadDocument);
+router.put('/documents/:id', updateDocument);
+router.delete('/documents/:id', deleteDocument);
 
-module.exports = router;
+export default router;

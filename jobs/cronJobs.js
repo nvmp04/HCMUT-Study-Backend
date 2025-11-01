@@ -41,7 +41,7 @@ export function initCronJobs(io) {
           } else {
             await appointmentClient.deleteOne({ _id: appt._id });
 
-            const message = `Yêu cầu lịch học vào lúc ${appt.time} ngày ${appt.date} đã bị xóa do quá thời gian chờ.`;
+            const message = `Yêu cầu lịch học vào lúc ${appt.time} ngày ${appt.date} đã bị xóa do quá thời gian.`;
 
             await notificationService.createNotification(
               appt.studentId,
