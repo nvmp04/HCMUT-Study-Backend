@@ -10,7 +10,7 @@ import ssoRouter from './routes/sso.js';
 import studentRouter from './routes/student.js';
 import tutorRouter from './routes/tutor.js';
 import notificationRouter from './routes/notification.js';
-import { accountClient, connectDB, tutorClient, tutorScheduleClient, unsuccessfulClient } from './config/db.js';
+import { connectDB } from './config/db.js';
 import { initCronJobs } from './jobs/cronJobs.js';
 
 dotenv.config();
@@ -23,7 +23,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173', 
+    origin: '*', 
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
   }
@@ -75,7 +75,7 @@ app.use('/notification', notificationRouter);
 // Start server
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, async () => {
+server.listen(PORT,'0.0.0.0', async () => {
   initCronJobs(io);
   await connectDB();
   console.log(`Server running on http://localhost:${PORT}`);
