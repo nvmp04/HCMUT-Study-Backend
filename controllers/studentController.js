@@ -95,7 +95,7 @@ export async function bookSession(req, res) {
     const result = await appointmentService.bookAppointment(appointmentData);
     const io = req.app.get("io");
     if (io) {
-      io.emit("booksession", {
+      io.to(result.tutorId).emit("booksession", {
         tutorId: result.tutorId,
         slotId: appointmentData.slotId,
         date: appointmentData.date,
@@ -141,7 +141,7 @@ export async function cancelled(req, res) {
     await unsuccessfulService.addCancelSchedule(studentId, 'student', slotId, reason);
     const io = req.app.get("io");
     if (io) {
-      io.emit("studentcancel", {
+      io.to(result.tutorId).emit("studentcancel", {
         id: studentId,
         tutorId: result.tutorId,
         name: result.appointment.studentName,
@@ -170,7 +170,7 @@ export async function cancelBeforeAccept(req, res) {
     const result = await appointmentService.cancelBeforeAccept(_id, studentId, slotId);
     const io = req.app.get("io");
     if (io) {
-      io.emit("cancelbeforeaccept", {
+      io.to(result.tutorId).emit("cancelbeforeaccept", {
         slotId: slotId,
         studentId: studentId,
         tutorId: result.tutorId,

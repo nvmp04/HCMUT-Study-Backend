@@ -125,7 +125,7 @@ export async function acceptOrCancel(req, res) {
         eventData.reason = reason;
       }
 
-      io.emit("appointment-updated", eventData);
+      io.to(result.studentId).emit("appointment-updated", eventData);
       notificationService.emitNotification(io, result.studentId);
     }
 
@@ -151,7 +151,7 @@ export async function decline(req, res) {
     await unsuccessfulService.addDeclineSchedule(tutorId, slotId, reason);
     const io = req.app.get("io");
     if (io) {
-      io.emit("decline", {
+      io.to(result.studentId).emit("decline", {
         _id,
         tutorId: tutorId,
         title: result.appointment.title,
