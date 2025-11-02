@@ -50,7 +50,7 @@ export class NotificationService {
    */
   emitNotification(io, id) {
     if (io) {
-      io.emit('notification', { notifId: id });
+      io.to(id).emit('notification', { notifId: id });
     }
   }
 }

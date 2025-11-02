@@ -55,7 +55,7 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id, 'User ID:', socket.userId);
-
+  socket.join(socket.userId);
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
