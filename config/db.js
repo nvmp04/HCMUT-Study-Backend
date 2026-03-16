@@ -1,6 +1,8 @@
 import { MongoClient } from "mongodb";
+import dotenv from 'dotenv'
 
-const uri = "mongodb+srv://minhphu2462004_db_user:phudeptrai04@clouddata.n345wgk.mongodb.net/?retryWrites=true&w=majority&appName=CloudData";
+dotenv.config();
+const uri = process.env.ATLAS_URI;
 const client = new MongoClient(uri);
 
 export let accountClient, studentClient, tutorClient, tutorScheduleClient, appointmentClient, notificationClient, unsuccessfulClient, reportClient, roadmapClient, documentClient;

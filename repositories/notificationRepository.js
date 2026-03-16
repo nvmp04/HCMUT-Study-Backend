@@ -7,7 +7,7 @@ export class NotificationRepository {
   async getById(id){
     return await notificationClient.find({ id })
       .sort({ time: -1 })
-      .toArray();;
+      .toArray();
   }
   async readById(_id){
     return await notificationClient.findOneAndUpdate(
