@@ -5,16 +5,19 @@ import { checkAuth } from "../utils/checkAuth.js";
 export class AuthService {
   authenticateRequest(req, res) {
     const token = checkAuth(req, res);
-    if (!token) return null;
+    if (!token) {
+      const err = new Error('No token provided!');
+      err.status = 401;
+      throw(err);
+    }
 
     const success = verifySsoToken(token);
     if (!success) {
-      res.status(401).json({ error: 'wrong token' });
-      return null;
+      const err = new Error('Invalid or expired token!');
+      err.status = 401;
+      throw(err);
     }
-
-    const decoded = jwtDecode(token);
-    return decoded.id;
+    return jwtDecode(token);
   }
 
   verifyToken(req) {

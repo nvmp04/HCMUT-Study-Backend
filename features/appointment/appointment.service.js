@@ -1,14 +1,12 @@
-import { appointmentRepository } from "../repositories/appointmentRepository.js";
-import { notificationService } from "./notificationService.js";
+import { appointmentRepository } from "./apointment.repository.js"
+import { notificationService } from "../../services/notificationService.js";
+
 import { ObjectId } from "mongodb";
 
 export class AppointmentService {
   //Lấy appointments của tutor theo status
-  async getAppointmentsByTutor(tutorId, status = null) {
-    return await appointmentRepository.findByTutorId(tutorId, status);
-  }
-  async getAppointmentsByStudent(StudentId, status = null) {
-    return await appointmentRepository.findByStudentId(StudentId, status);
+  async getAppointmentsByUser(id) {
+    return await appointmentRepository.findByUserId(id);
   }
   async acceptAppointment(tutorId, _id, slotId, type, detail) {
     const appt = await appointmentRepository.updateAppointment(
@@ -165,7 +163,9 @@ export class AppointmentService {
       eventType: 'booked'
     };
   }
+  async reschedule() {
 
+  }
   async cancelByStudent(studentId, _id, slotId, reason) {
     const appt = await appointmentRepository.updateAppointment(
       _id,
@@ -238,8 +238,8 @@ export class AppointmentService {
       {report: report}
     )
   };
-  async getScheduleStatus(tutorId) {
-    const appointments = await appointmentRepository.findByTutorId(tutorId);
+  async getScheduleStatus(id) {
+    const appointments = await appointmentRepository.findByUserId(id);
     return appointments.map((appt) => ({
       slotId: appt.slotId,
       status: appt.status,

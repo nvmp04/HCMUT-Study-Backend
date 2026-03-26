@@ -1,6 +1,6 @@
 import { authService } from "../services/authService.js";
-import { appointmentService } from "../services/appointmentService.js";
-import { scheduleService } from "../services/scheduleService.js";
+import { appointmentService } from "../features/appointment/appointment.service.js";
+import { scheduleService } from "../features/schedule/schedule.service.js";
 import { notificationService } from "../services/notificationService.js";
 import { tutorRepository } from "../repositories/tutorRepository.js";
 import { unsuccessfulService } from "../services/unsuccessfulService.js";
@@ -173,7 +173,7 @@ export async function getAppointments(req, res){
   try{
     const tutorId = authService.authenticateRequest(req, res);
     if(!tutorId) return;
-    const appointments = await appointmentService.getAppointmentsByTutor(tutorId);
+    const appointments = await appointmentService.getAppointmentsByUser(tutorId);
     res.json({ appointment: appointments });
   }
   catch(err){

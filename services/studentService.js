@@ -1,5 +1,5 @@
 import { studentRepository } from "../repositories/studentRepository.js";
-import { appointmentService } from "./appointmentService.js";
+import { appointmentService } from "../features/appointment/appointment.service.js";
 
 export class StudentService {
   /**
@@ -11,14 +11,9 @@ export class StudentService {
   async getBannedStudent(){
     return await studentRepository.findBanned();
   }
-  async getStudentWithAppointments(studentId) {
+  async getStudentProfile(studentId) {
     const student = await studentRepository.findById(studentId);
-    const appointments = await appointmentService.getAppointmentsByTutor(studentId, 'accepted');
-
-    return {
-      student,
-      appointments
-    };
+    return student;
   }
   async updateBanStatus(id, status){
     return await studentRepository.updateBanStatus(id, status);

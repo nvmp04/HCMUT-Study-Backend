@@ -5,12 +5,17 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 
+import scheduleRouter from './features/schedule/schedule.routes.js'
+import userRouter from './features/user/user.routes.js'
+
 import adminRouter from './routes/admin.js'
 import ssoRouter from './routes/sso.js';
 import studentRouter from './routes/student.js';
 import tutorRouter from './routes/tutor.js';
 import notificationRouter from './routes/notification.js';
 import libraryRouter from './routes/library.js'
+
+
 import { connectDB } from './config/db.js';
 import { initCronJobs } from './jobs/cronJobs.js';
 
@@ -68,9 +73,14 @@ io.on('connect_error', (error) => {
 });
 
 // Routes API
+app.use('/user', userRouter);
+
 app.use('/sso', ssoRouter);
 app.use('/admin', adminRouter);
 app.use('/student', studentRouter);
+
+app.use('/schedule', scheduleRouter);
+
 app.use('/tutor', tutorRouter);
 app.use('/notification', notificationRouter);
 app.use('/library', libraryRouter);
@@ -78,7 +88,7 @@ app.use('/library', libraryRouter);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT,'0.0.0.0', async () => {
-  initCronJobs(io);
   await connectDB();
+  initCronJobs(io);
   console.log(`Server running on http://localhost:${PORT}`);
 });

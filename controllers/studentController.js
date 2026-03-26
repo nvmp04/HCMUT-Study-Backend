@@ -1,67 +1,15 @@
 import { authService } from "../services/authService.js";
-import { appointmentService } from "../services/appointmentService.js";
-import { scheduleService } from "../services/scheduleService.js";
+import { appointmentService } from "../features/appointment/appointment.service.js";
+import { scheduleService } from "../features/schedule/schedule.service.js";
 import { tutorService } from "../services/tutorService.js";
-import { studentService } from "../services/studentService.js";
 import { notificationService } from "../services/notificationService.js";
 import { unsuccessfulService } from "../services/unsuccessfulService.js";
 import { aiService } from "../services/aiService.js";
 import { roadmapClient, tutorClient } from "../config/db.js";
 
-/**
- * GET /student/tutors
- * Lấy danh sách tất cả tutors
- */
-export async function getTutorsData(req, res) {
-  try {
-    const token = authService.verifyToken(req);
-    if (!token) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const tutors = await tutorService.getAllTutors();
-    return res.json({ tutors });
-  } catch (err) {
-    console.error("Error in getTutorsData:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
 
-/**
- * POST /student/tutor
- * Lấy thông tin 1 tutor cụ thể
- */
-export async function getTutorData(req, res) {
-  try {
-    const token = authService.verifyToken(req);
-    if (!token) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const { id } = req.body;
-    const tutor = await tutorService.getTutorById(id);
-    res.json({ tutor });
-  } catch (err) {
-    console.error("Error in getTutorData:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
-/**
- * GET /student/data
- * Lấy thông tin student và appointments đã accepted
- */
-export async function getStudentData(req, res) {
-  try {
-    const studentId = authService.authenticateRequest(req, res);
-    if (!studentId) return;
-    const result = await studentService.getStudentWithAppointments(studentId);
-    res.json({
-      student: result.student,
-      appointment: result.appointments
-    });
-  } catch (err) {
-    console.error("Error in getStudentData:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
+
+
 /**
  * POST /student/schedule
  * Lấy schedule của tutor và status của các slots
@@ -119,9 +67,9 @@ export async function bookSession(req, res) {
  */
 export async function getMySchedule(req, res) {
   try {
-    const studentId = authService.authenticateRequest(req, res);
-    if (!studentId) return;
-    const appointments = await appointmentService.getAppointmentsByStudent(studentId);
+    const decoded = authService.authenticateRequest(req, res);
+    if (!decoded) return;
+    const appointments = await appointmentService.getAppointmentsByUser(decoded.id);
     res.json({ appointment: appointments });
   } catch (err) {
     console.error("Error in getMySchedule:", err);

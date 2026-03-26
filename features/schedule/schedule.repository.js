@@ -1,8 +1,10 @@
-import { tutorScheduleClient } from "../config/db.js";
+import { tutorScheduleClient } from "../../config/db.js";
 
 export class ScheduleRepository {
-  async findByTutorId(tutorId) {
-    return await tutorScheduleClient.findOne({ id: tutorId });
+
+  async getTimeSlot(id){
+    //Lấy các khung giờ rảnh của tutor(do tutor set)
+    return await tutorScheduleClient.findOne({id});
   }
 
   async updateDaySchedule(tutorId, day, times) {
