@@ -1,12 +1,11 @@
 import express from 'express';
-import {  bookSession, getMySchedule, cancelled, cancelBeforeAccept, deleteCancelled, rating, AIgenerate, getRoadmap, getSuitableTutors} from '../controllers/studentController.js';
+import {  bookSession, cancelled, cancelBeforeAccept, deleteCancelled, rating, AIgenerate, getRoadmap, getSuitableTutors} from '../controllers/studentController.js';
 
 const router = express.Router();
 
 
 
 router.post('/booksession', bookSession);
-router.get('/getmyschedule', getMySchedule);
 router.put('/cancelled', cancelled);
 router.delete('/cancelbeforeaccept', cancelBeforeAccept);
 router.delete('/deletecancelled', deleteCancelled);

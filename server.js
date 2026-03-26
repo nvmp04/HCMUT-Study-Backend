@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 
 import scheduleRouter from './features/schedule/schedule.routes.js'
 import userRouter from './features/user/user.routes.js'
+import appointmentRouter from './features/appointment/appointment.routes.js'
 
 import adminRouter from './routes/admin.js'
 import ssoRouter from './routes/sso.js';
@@ -74,6 +75,7 @@ io.on('connect_error', (error) => {
 
 // Routes API
 app.use('/user', userRouter);
+app.use('/appointment', appointmentRouter)
 
 app.use('/sso', ssoRouter);
 app.use('/admin', adminRouter);

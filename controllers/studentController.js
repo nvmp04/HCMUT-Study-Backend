@@ -61,21 +61,7 @@ export async function bookSession(req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
-/**
- * GET /student/my-schedule
- * Lấy tất cả appointments của student
- */
-export async function getMySchedule(req, res) {
-  try {
-    const decoded = authService.authenticateRequest(req, res);
-    if (!decoded) return;
-    const appointments = await appointmentService.getAppointmentsByUser(decoded.id);
-    res.json({ appointment: appointments });
-  } catch (err) {
-    console.error("Error in getMySchedule:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
+
 /**
  * POST /student/cancel
  * Student cancel appointment (sau khi đã accepted)

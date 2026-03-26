@@ -5,7 +5,7 @@ import { ObjectId } from "mongodb";
 
 export class AppointmentService {
   //Lấy appointments của tutor theo status
-  async getAppointmentsByUser(id) {
+  async getUserAppointments(id) {
     return await appointmentRepository.findByUserId(id);
   }
   async acceptAppointment(tutorId, _id, slotId, type, detail) {
