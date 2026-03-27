@@ -1,4 +1,4 @@
-import { authService } from "../../services/authService.js";
+import { authService } from "../auth/auth.service.js";
 import { scheduleService } from "./schedule.service.js";
 import { appointmentService } from "../appointment/appointment.service.js";
 /**

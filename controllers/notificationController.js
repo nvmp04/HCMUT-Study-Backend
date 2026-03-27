@@ -1,4 +1,4 @@
-import { authService } from "../services/authService.js";
+import { authService } from "../features/auth/auth.service.js";
 import { notificationService } from "../services/notificationService.js";
 
 export async function getNotifications(req, res) {

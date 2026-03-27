@@ -1,6 +1,6 @@
 import { reportClient } from "../config/db.js";
 import { accountService } from "../services/accountService.js";
-import { authService } from "../services/authService.js";
+import { authService } from "../features/auth/auth.service.js";
 import { emailService } from "../services/emailService.js";
 import { notificationService } from "../services/notificationService.js";
 import { studentService } from "../services/studentService.js";

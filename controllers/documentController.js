@@ -1,5 +1,5 @@
 import { documentService } from '../services/documentService.js';
-import { authService } from '../services/authService.js';
+import { authService } from '../features/auth/auth.service.js';
 import multer from 'multer';
 const upload = multer();
 

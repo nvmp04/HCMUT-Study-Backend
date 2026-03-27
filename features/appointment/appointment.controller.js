@@ -1,4 +1,4 @@
-import { authService } from "../../services/authService.js";
+import { authService } from "../auth/auth.service.js";
 import { appointmentService } from "./appointment.service.js";
 
 export async function getAppointments(req, res){

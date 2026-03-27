@@ -1,6 +1,6 @@
 import { jwtDecode } from "jwt-decode";
-import { verifyToken } from "../core/auth/token.service.js";
-import { checkAuth } from "../utils/checkAuth.js";
+import { verifyToken } from "../../core/auth/token.service.js";
+import { checkAuth } from "../../utils/checkAuth.js";
 
 export class AuthService {
   authenticateRequest(req, res) {
@@ -24,7 +24,7 @@ export class AuthService {
     const token = checkAuth(req);
     if (!token) return null;
 
-    const success = verifySsoToken(token);
+    const success = verifyToken(token);
     if (!success) return null;
 
     const decoded = jwtDecode(token);
