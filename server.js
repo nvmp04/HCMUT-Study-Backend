@@ -8,9 +8,9 @@ import jwt from 'jsonwebtoken';
 import scheduleRouter from './features/schedule/schedule.routes.js'
 import userRouter from './features/user/user.routes.js'
 import appointmentRouter from './features/appointment/appointment.routes.js'
+import authRouter from './features/auth/auth.routes.js'
 
 import adminRouter from './routes/admin.js'
-import ssoRouter from './routes/sso.js';
 import studentRouter from './routes/student.js';
 import tutorRouter from './routes/tutor.js';
 import notificationRouter from './routes/notification.js';
@@ -48,7 +48,7 @@ io.use((socket, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.SSO_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     socket.userId = decoded.id;
     socket.user = decoded;
     console.log('Token xác thực thành công, User ID:', decoded.id);
@@ -75,13 +75,13 @@ io.on('connect_error', (error) => {
 
 // Routes API
 app.use('/user', userRouter);
-app.use('/appointment', appointmentRouter)
+app.use('/appointments', appointmentRouter)
+app.use('/schedule', scheduleRouter);
+app.use('/auth', authRouter);
 
-app.use('/sso', ssoRouter);
 app.use('/admin', adminRouter);
 app.use('/student', studentRouter);
 
-app.use('/schedule', scheduleRouter);
 
 app.use('/tutor', tutorRouter);
 app.use('/notification', notificationRouter);

@@ -1,5 +1,5 @@
 import { jwtDecode } from "jwt-decode";
-import { verifySsoToken } from "./tokenService.js";
+import { verifyToken } from "../core/auth/token.service.js";
 import { checkAuth } from "../utils/checkAuth.js";
 
 export class AuthService {
@@ -11,7 +11,7 @@ export class AuthService {
       throw(err);
     }
 
-    const success = verifySsoToken(token);
+    const success = verifyToken(token);
     if (!success) {
       const err = new Error('Invalid or expired token!');
       err.status = 401;

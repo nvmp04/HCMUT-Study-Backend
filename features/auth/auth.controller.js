@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
-import { signSsoToken, verifySsoToken } from '../services/tokenService.js';
-import { accountClient } from '../config/db.js';
+import { signToken, verifyToken } from '../../core/auth/token.service.js';
+import { accountClient } from '../../config/db.js';
 
 export async function login(req, res) {
   const { username, password, role} = req.body;
@@ -18,7 +18,7 @@ export async function login(req, res) {
   }
   const ok = bcrypt.compareSync(password, user.password);
   if (!ok) return res.json({ error: 'invalid credentials' });
-  const ssoToken = signSsoToken({
+  const ssoToken = signToken({
     id: user.id,
     role: user.role
   });
@@ -36,7 +36,7 @@ export async function userinfo(req, res) {
   const token = authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'missing token' });
   try {
-    const payload = verifySsoToken(token);
+    const payload = verifyToken(token);
     return res.json({ user: payload });
   } catch (err) {
     return res.status(401).json({ error: 'invalid token' });

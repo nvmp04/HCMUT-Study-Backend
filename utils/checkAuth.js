@@ -1,4 +1,4 @@
-import { verifySsoToken } from "../services/tokenService.js";
+import { verifyToken } from "../core/auth/token.service.js";
 
 export function checkAuth(req, res) {
   const authHeader = req.headers.authorization;
@@ -13,7 +13,7 @@ export function checkAuth(req, res) {
     return null;
   }
 
-  const success = verifySsoToken(token);
+  const success = verifyToken(token);
   if (!success) {
     res.status(401).json({ error: "wrong token" });
     return null;
