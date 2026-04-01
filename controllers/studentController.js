@@ -143,8 +143,8 @@ export async function AIgenerate(req, res){
 
 export async function getRoadmap(req, res){
   try{
-    const id = authService.authenticateRequest(req, res);
-    const roadmap = await roadmapClient.findOne({id});
+    const decoded = authService.authenticateRequest(req, res);
+    const roadmap = await roadmapClient.findOne({id: decoded.id});
     res.json({roadmap});
   }
   catch(err){

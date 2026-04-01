@@ -30,5 +30,10 @@ export class AppointmentRepository {
     async deleteById(appointmentId) {
         return await appointmentClient.findOneAndDelete({ _id: appointmentId });
     }
+    async checkConflictSlot(tutorId, time, date){
+        const conflictSlot = await appointmentClient.findOne({tutorId, date, time});
+        if(conflictSlot) return true;
+        return false;
+    }
 }
 export const appointmentRepository = new AppointmentRepository();

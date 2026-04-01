@@ -3,7 +3,7 @@ import { notificationService } from "../services/notificationService.js";
 
 export async function getNotifications(req, res) {
   try {
-    const id = authService.authenticateRequest(req, res);
+    const {id} = authService.authenticateRequest(req, res);
     const notifications = await notificationService.getNotificationById(id);
     res.json({ notifications });
   } 

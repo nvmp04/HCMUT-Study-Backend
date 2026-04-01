@@ -19,6 +19,7 @@ import libraryRouter from './routes/library.js'
 
 import { connectDB } from './config/db.js';
 import { initCronJobs } from './jobs/cronJobs.js';
+import { scheduleService } from './features/schedule/schedule.service.js';
 
 dotenv.config();
 
@@ -91,6 +92,10 @@ app.use('/library', libraryRouter);
 const PORT = process.env.PORT || 5000;
 server.listen(PORT,'0.0.0.0', async () => {
   await connectDB();
-  initCronJobs(io);
+  //initCronJobs(io);
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+
+
+

@@ -77,7 +77,7 @@ export class AppointmentService {
     };
   }
 
-  async declineAppointment(_id, tutorId, slotId, reason) {
+  async declineAppointment(_id, tutorId,  reason) {
     const appt = await appointmentRepository.deleteById(new ObjectId(_id));
     if (!appt) {
       throw new Error('Appointment not found');
@@ -88,7 +88,6 @@ export class AppointmentService {
     await notificationService.createAppointmentNotification(
       studentId,
       appt.title,
-      slotId,
       null,
       reason,
       'declined'
@@ -116,7 +115,6 @@ export class AppointmentService {
       tutorPhone,
       date,
       time,
-      slotId,
       title,
       type,
       location,
@@ -135,7 +133,6 @@ export class AppointmentService {
       tutorPhone,
       date,
       time,
-      slotId,
       title,
       type,
       location,
@@ -150,7 +147,6 @@ export class AppointmentService {
     await notificationService.createAppointmentNotification(
       tutorId,
       title,
-      slotId,
       studentName,
       reason,
       'booked'
@@ -163,8 +159,28 @@ export class AppointmentService {
       eventType: 'booked'
     };
   }
-  async reschedule() {
+  async reschedule(appointment, timeSlot) {
+    const { tutorId } = appointment;
+    const { time, date } = timeSlot;
 
+    const conflict = await appointmentRepository.checkConflictSlot(tutorId, time, date);
+    
+    if (conflict) {
+      return {
+        success: false,
+        message: 'Rất tiếc, khung giờ này vừa có người nhanh tay hơn đặt mất rồi!'
+      };
+    }
+    const new_appointment = await appointmentRepository.updateAppointment(appointment._id, {
+      time, 
+      date
+    });
+
+    return {
+      success: true,
+      message: "Đổi lịch thành công!",
+      appointment: new_appointment
+    };
   }
   async cancelByStudent(studentId, _id, slotId, reason) {
     const appt = await appointmentRepository.updateAppointment(
@@ -198,6 +214,7 @@ export class AppointmentService {
   }
   async cancelBeforeAccept(_id, studentId, slotId) {
     const appt = await appointmentRepository.deleteById(new ObjectId(_id));
+    console.log(_id);
     if (!appt) {
       throw new Error('Appointment not found');
     }
@@ -238,13 +255,6 @@ export class AppointmentService {
       {report: report}
     )
   };
-  async getScheduleStatus(id) {
-    const appointments = await appointmentRepository.findByUserId(id);
-    return appointments.map((appt) => ({
-      slotId: appt.slotId,
-      status: appt.status,
-    }));
-  }
 }
 
 export const appointmentService = new AppointmentService();

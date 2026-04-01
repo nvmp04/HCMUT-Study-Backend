@@ -146,9 +146,9 @@ export async function decline(req, res) {
     const tutorId = authService.authenticateRequest(req, res);
     if (!tutorId) return;
 
-    const { _id, reason, slotId } = req.body;
-    const result = await appointmentService.declineAppointment(_id, tutorId, slotId, reason);
-    await unsuccessfulService.addDeclineSchedule(tutorId, slotId, reason);
+    const { _id, reason} = req.body;
+    const result = await appointmentService.declineAppointment(_id, tutorId, reason);
+    await unsuccessfulService.addDeclineSchedule(tutorId, reason);
     const io = req.app.get("io");
     if (io) {
       io.to(result.studentId).emit("decline", {

@@ -1,5 +1,4 @@
 import { studentRepository } from "../repositories/studentRepository.js";
-import { appointmentService } from "../features/appointment/appointment.service.js";
 
 export class StudentService {
   /**

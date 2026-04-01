@@ -1,5 +1,6 @@
 import { authService } from "../auth/auth.service.js";
 import { appointmentService } from "./appointment.service.js";
+import { notificationService } from "../../services/notificationService.js";
 
 export async function getAppointments(req, res){
     try{
@@ -44,4 +45,16 @@ export async function makeAppointment(req, res){
         res.status( err?.status || 500).json({error: err?.message || "Internal server error"})
     }
 }
+
+    export async function reschedule(req, res){
+        try{
+            const {appointment, timeSlot} = req.body;
+            const result = await appointmentService.reschedule(appointment, timeSlot);
+            res.json(result);
+        }
+        catch(err){
+            const statusCode = err.status;
+            res.status(statusCode || 500).json({error: err.message || 'Internal server error'})
+        }
+    }
 
