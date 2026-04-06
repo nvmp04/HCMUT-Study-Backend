@@ -1,12 +1,23 @@
 import { appointmentRepository } from "./apointment.repository.js"
+import {historyRepository} from "./history.repository.js"
 import { notificationService } from "../../services/notificationService.js";
 
 import { ObjectId } from "mongodb";
 
 export class AppointmentService {
-  //Lấy appointments của tutor theo status
   async getUserAppointments(id) {
     return await appointmentRepository.findByUserId(id);
+  }
+  async getUserFullSchedule(userId, role) {
+    const [activeAppointments, historyAppointments] = await Promise.all([
+      appointmentRepository.findByUserId(userId),
+      historyRepository.findByUserId(userId, role) 
+    ]);
+
+    return {
+      active: activeAppointments || [],
+      history: historyAppointments || []
+    };
   }
   async acceptAppointment(tutorId, _id, slotId, type, detail) {
     const appt = await appointmentRepository.updateAppointment(
@@ -43,39 +54,7 @@ export class AppointmentService {
     };
   }
 
-  /**
-   * Cancel appointment by tutor
-   */
-  async cancelAppointment(tutorId, _id, slotId, reason) {
-    const apptDoc = await appointmentRepository.findById(new ObjectId(_id));
-    if (!apptDoc) {
-      throw new Error('Appointment not found');
-    }
-    const {studentId} = apptDoc;
-    await notificationService.createAppointmentNotification(
-      studentId,
-      apptDoc.title,
-      slotId,
-      null,
-      reason,
-      'cancelled'
-    );
-    const appt = await appointmentRepository.updateAppointment(
-      _id,
-      {
-        tutorId: '',
-        status: 'cancelled',
-        reason: reason
-      }
-    );
-    return {
-      appointment: appt,
-      studentId,
-      tutorId,
-      eventType: 'cancelled',
-      reason
-    };
-  }
+  
 
   async declineAppointment(_id, tutorId,  reason) {
     const appt = await appointmentRepository.deleteById(new ObjectId(_id));
@@ -182,39 +161,56 @@ export class AppointmentService {
       appointment: new_appointment
     };
   }
-  async cancelByStudent(studentId, _id, slotId, reason) {
-    const appt = await appointmentRepository.updateAppointment(
-      _id,
-      {
-        id: studentId,
-        status: 'cancelled',
-        reason: reason
-      }
-    );
+  async cancelAndArchive(id, cancellerId, role, reason, slotId) {
+    const appt = await appointmentRepository.findById(new ObjectId(id));
     if (!appt) {
       throw new Error('Appointment not found');
     }
-    const tutorId = appt.tutorId;
+    const historyData = {
+      ...appt,
+      originalId: appt._id, 
+      status: 'cancelled',
+      reason: reason,
+      cancelledBy: cancellerId,
+      cancelledRole: role, 
+      visibleToStudent: true,
+      visibleToTutor: true,
+      archivedAt: new Date()
+    };
+    delete historyData._id;
+    await historyRepository.create(historyData);
+    await appointmentRepository.deleteById(new ObjectId(id));
+    const receiverId = role === 'student' ? appt.tutorId : appt.studentId;
     await notificationService.createAppointmentNotification(
-      tutorId,
+      receiverId,
       appt.title,
       slotId,
-      appt.studentName,
+      role === 'student' ? appt.studentName : appt.tutorName,
       reason,
       'cancelled'
     );
 
     return {
       appointment: appt,
-      tutorId,
-      studentId,
+      tutorId: appt.tutorId,
+      studentId: appt.studentId,
       eventType: 'cancelled',
       reason
     };
   }
+
+  
+  async hideHistory(historyId, role) {
+    const updateField = role === 'student' ? { visibleToStudent: false } : { visibleToTutor: false };
+    
+    const updated = await historyRepository.updateVisibility(historyId, updateField);
+    if (!updated.visibleToStudent && !updated.visibleToTutor) {
+      await historyRepository.deletePermanently(historyId);
+    }
+    return updated;
+  }
   async cancelBeforeAccept(_id, studentId, slotId) {
     const appt = await appointmentRepository.deleteById(new ObjectId(_id));
-    console.log(_id);
     if (!appt) {
       throw new Error('Appointment not found');
     }

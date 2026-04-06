@@ -2,18 +2,16 @@ import { authService } from "../auth/auth.service.js";
 import { appointmentService } from "./appointment.service.js";
 import { notificationService } from "../../services/notificationService.js";
 
-export async function getAppointments(req, res){
-    try{
+export async function getAppointments(req, res) {
+    try {
         const decoded = authService.authenticateRequest(req);
-        const appointments = await appointmentService.getUserAppointments(decoded.id);
-        if(!appointments){
-            return res.status(404).json({error: 'Appointments not found!'})
-        }
-        res.json({appointments});
-    }
-    catch(err){
-        const statusCode = err.status;
-        res.status(statusCode).json({error: err.message})
+        if (!decoded) return res.status(401).json({ error: 'Unauthorized' });
+        const { active, history } = await appointmentService.getUserFullSchedule(decoded.id, decoded.role);
+        res.json({ active, history });
+    } catch (err) {
+        console.error("Error in getAppointments:", err);
+        const statusCode = err.status || 500;
+        res.status(statusCode).json({ error: err.message || 'Internal server error' });
     }
 }
 
@@ -46,15 +44,85 @@ export async function makeAppointment(req, res){
     }
 }
 
-    export async function reschedule(req, res){
-        try{
-            const {appointment, timeSlot} = req.body;
-            const result = await appointmentService.reschedule(appointment, timeSlot);
-            res.json(result);
-        }
-        catch(err){
-            const statusCode = err.status;
-            res.status(statusCode || 500).json({error: err.message || 'Internal server error'})
-        }
+export async function reschedule(req, res){
+    try{
+        const {appointment, timeSlot} = req.body;
+        const result = await appointmentService.reschedule(appointment, timeSlot);
+        res.json(result);
+    }
+    catch(err){
+        const statusCode = err.status;
+        res.status(statusCode || 500).json({error: err.message || 'Internal server error'})
+    }
+}
+
+export async function cancel(req, res) {
+  try {
+    const userData = authService.authenticateRequest(req, res); 
+    if (!userData) return;
+
+    const { id, role } = userData; 
+    const { _id, reason } = req.body;
+
+    const result = await appointmentService.cancelAndArchive(
+      _id, 
+      id, 
+      role, 
+      reason
+    );
+    const io = req.app.get("io");
+    if (io) {
+      const targetId = role === 'student' ? result.tutorId : result.studentId;
+      io.to(targetId).emit("appointmentCancelled", {
+        by: role,
+        name: role === 'student' ? result.appointment.studentName : result.appointment.tutorName,
+        reason: reason,
+        appointmentId: _id
+      });
+      notificationService.emitNotification(io, targetId);
     }
 
+    res.json({ success: true, message: "Đã hủy và lưu vào lịch sử" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function hideCancelled(req, res) {
+    try {
+        const decoded = authService.authenticateRequest(req); 
+        const { _id} = req.body;
+
+        if (!_id) {
+            return res.status(400).json({ error: "Thiếu ID lịch học." });
+        }
+        await appointmentService.hideHistory(_id, decoded.role);
+        
+        res.json({ success: true, message: "Đã ẩn lịch khỏi danh sách của bạn." });
+    } catch (err) {
+        res.status(err.status || 500).json({ error: err.message });
+    }
+}
+
+export async function deletePending(req, res){
+    try {
+    const studentId = authService.authenticateRequest(req, res).id;
+    if (!studentId) return;
+
+    const { _id, slotId } = req.body;
+    const result = await appointmentService.cancelBeforeAccept(_id, studentId, slotId);
+    const io = req.app.get("io");
+    if (io) {
+      io.to(result.tutorId).emit("cancelbeforeaccept", {
+        slotId: slotId,
+        studentId: studentId,
+        tutorId: result.tutorId,
+      });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error in cancelBeforeAccept:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}

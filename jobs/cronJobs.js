@@ -1,11 +1,10 @@
 import cron from "node-cron";
-import { appointmentClient, unsuccessfulClient } from "../config/db.js"; 
+import { appointmentClient, unsuccessfulClient, historyClient } from "../config/db.js"; 
 import { notificationService } from "../services/notificationService.js";
 
 function parseAppointmentDateTime(dateStr, timeStr, mode = "end") {
-  const cleanDate = dateStr.split(", ")[1];
   const [startStr, endStr] = timeStr.split(" - ");
-  const [day, month, year] = cleanDate.split("/").map(Number);
+  const [day, month, year] = dateStr.split("/").map(Number);
   const [hour, minute] = (mode === "start" ? startStr : endStr)
     .split(":")
     .map(Number);
@@ -34,10 +33,17 @@ export function initCronJobs(io) {
 
         if (compareTime < now) {
           if (appt.status === "accepted") {
-            await appointmentClient.updateOne(
-              { _id: appt._id },
-              { $set: { status: "completed" } }
-            );
+            const historyData = {
+                ...appt,
+                status: "completed", 
+                visibleToStudent: true,
+                visibleToTutor: true,
+                archivedAt: new Date(),
+                completedAt: new Date()
+            };
+            delete historyData._id;
+            await historyClient.insertOne(historyData);
+            await appointmentClient.deleteOne({ _id: appt._id });
           } else {
             await appointmentClient.deleteOne({ _id: appt._id });
 

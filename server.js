@@ -8,10 +8,11 @@ import jwt from 'jsonwebtoken';
 import scheduleRouter from './features/schedule/schedule.routes.js'
 import userRouter from './features/user/user.routes.js'
 import appointmentRouter from './features/appointment/appointment.routes.js'
+import roadmapRouter from './features/roadmap/roadmap.routes.js'
 import authRouter from './features/auth/auth.routes.js'
+import ratingRouter from './features/rating/rating.routes.js'
 
 import adminRouter from './routes/admin.js'
-import studentRouter from './routes/student.js';
 import tutorRouter from './routes/tutor.js';
 import notificationRouter from './routes/notification.js';
 import libraryRouter from './routes/library.js'
@@ -19,7 +20,7 @@ import libraryRouter from './routes/library.js'
 
 import { connectDB } from './config/db.js';
 import { initCronJobs } from './jobs/cronJobs.js';
-import { scheduleService } from './features/schedule/schedule.service.js';
+
 
 dotenv.config();
 
@@ -79,9 +80,10 @@ app.use('/user', userRouter);
 app.use('/appointments', appointmentRouter)
 app.use('/schedule', scheduleRouter);
 app.use('/auth', authRouter);
+app.use('/roadmap', roadmapRouter);
+app.use('/rating', ratingRouter);
 
 app.use('/admin', adminRouter);
-app.use('/student', studentRouter);
 
 
 app.use('/tutor', tutorRouter);
@@ -92,7 +94,7 @@ app.use('/library', libraryRouter);
 const PORT = process.env.PORT || 5000;
 server.listen(PORT,'0.0.0.0', async () => {
   await connectDB();
-  //initCronJobs(io);
+  initCronJobs(io);
   console.log(`Server running on http://localhost:${PORT}`);
 });
 
