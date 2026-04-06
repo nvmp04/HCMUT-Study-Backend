@@ -161,7 +161,7 @@ export class AppointmentService {
       appointment: new_appointment
     };
   }
-  async cancelAndArchive(id, cancellerId, role, reason, slotId) {
+  async rejectAndArchive(id, cancellerId, role, reason, status) {
     const appt = await appointmentRepository.findById(new ObjectId(id));
     if (!appt) {
       throw new Error('Appointment not found');
@@ -169,7 +169,7 @@ export class AppointmentService {
     const historyData = {
       ...appt,
       originalId: appt._id, 
-      status: 'cancelled',
+      status,
       reason: reason,
       cancelledBy: cancellerId,
       cancelledRole: role, 
@@ -184,7 +184,6 @@ export class AppointmentService {
     await notificationService.createAppointmentNotification(
       receiverId,
       appt.title,
-      slotId,
       role === 'student' ? appt.studentName : appt.tutorName,
       reason,
       'cancelled'

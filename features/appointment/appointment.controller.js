@@ -56,19 +56,55 @@ export async function reschedule(req, res){
     }
 }
 
-export async function cancel(req, res) {
+export async function accept(req, res) {
+  try {
+    const tutorId = authService.authenticateRequest(req, res).id;
+    if (!tutorId) return;
+    const { _id, slotId, type, detail } = req.body;
+    let result;
+    result = await appointmentService.acceptAppointment(tutorId, _id, slotId, type, detail);
+
+    // Emit socket events
+    const io = req.app.get("io");
+    if (io) {
+      // Emit appointment update
+      const eventData = {
+        _id,
+        id: tutorId,
+        studentId: result.studentId,
+        title: result.appointment.title,
+        tutorId: tutorId,
+        name: result.appointment.tutorName,
+        slotId: slotId,
+        type: result.eventType
+      };
+
+      io.to(result.studentId).emit("appointment-updated", eventData);
+      notificationService.emitNotification(io, result.studentId);
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error in accept:", err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+export async function reject(req, res) {
   try {
     const userData = authService.authenticateRequest(req, res); 
     if (!userData) return;
 
     const { id, role } = userData; 
     const { _id, reason } = req.body;
-
-    const result = await appointmentService.cancelAndArchive(
+    console.log(req.body)
+    const {action} = req.query;
+    const result = await appointmentService.rejectAndArchive(
       _id, 
       id, 
       role, 
-      reason
+      reason,
+      action
     );
     const io = req.app.get("io");
     if (io) {

@@ -15,7 +15,6 @@ import reportRouter from './features/report/report.routes.js'
 import documentRouter from './features/document/document.routes.js'
 
 import adminRouter from './routes/admin.js'
-import tutorRouter from './routes/tutor.js';
 import notificationRouter from './routes/notification.js';
 
 
@@ -78,7 +77,7 @@ io.on('connect_error', (error) => {
 
 // Routes API
 app.use('/user', userRouter);
-app.use('/appointments', appointmentRouter)
+app.use('/appointments', appointmentRouter);
 app.use('/schedule', scheduleRouter);
 app.use('/auth', authRouter);
 app.use('/roadmap', roadmapRouter);
@@ -87,7 +86,6 @@ app.use('/report', reportRouter);
 app.use('/documents', documentRouter);
 
 app.use('/admin', adminRouter);
-app.use('/tutor', tutorRouter);
 app.use('/notification', notificationRouter);
 // Start server
 

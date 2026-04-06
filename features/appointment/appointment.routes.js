@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { cancel, deletePending, getAppointments, hideCancelled, makeAppointment, reschedule } from "./appointment.controller.js";
+import { reject, deletePending, getAppointments, hideCancelled, makeAppointment, reschedule, accept } from "./appointment.controller.js";
 
 const router = new Router();
 
 router.get('/', getAppointments);
 router.post('/', makeAppointment);
 router.put('/', reschedule);
-router.delete('/', cancel);
+router.patch('/', accept);
+router.delete('/', reject);
 router.delete('/pending', deletePending);
 router.put('/history', hideCancelled);
 export default router;

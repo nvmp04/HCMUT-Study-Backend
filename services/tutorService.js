@@ -9,10 +9,6 @@ export class TutorService {
     return await tutorRepository.findBanned();
   }
 
-  async getTutorById(tutorId) {
-    return await tutorRepository.findById(tutorId);
-  }
-
   async updateRating(tutorId, newRating) {
     const tutor = await tutorRepository.findById(tutorId);
     
