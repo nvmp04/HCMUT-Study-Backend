@@ -24,65 +24,8 @@ export async function getTutorData(req, res) {
   }
 }
 
-/**
- * GET /tutor/schedule
- * Lấy schedule và tất cả appointments của tutor
- */
-export async function getSchedule(req, res) {
-  try {
-    // Authenticate
-    const tutorId = authService.authenticateRequest(req, res);
-    if (!tutorId) return;
 
-    // Get data
-    const schedule = await scheduleService.getTutorSchedule(tutorId);
-    const appointment = await appointmentService.getAppointmentsByTutor(tutorId);
 
-    res.json({ schedule, appointment });
-  } catch (err) {
-    console.error("❌ Error in getSchedule:", err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
-
-/**
- * POST /tutor/schedule/slot
- * Thêm hoặc xóa slot trong schedule
- */
-export async function addDeleteSlot(req, res) {
-  try {
-    const tutorId = authService.authenticateRequest(req, res);
-    if (!tutorId) return;
-
-    const { day, time, type } = req.body;
-
-    // Business logic
-    const result = await scheduleService.addOrDeleteSlot(tutorId, day, time, type);
-
-    // Emit socket event
-    const io = req.app.get("io");
-    if (io) {
-      io.emit("tutorScheduleUpdated", result);
-    }
-
-    res.json({ success: true, times: result.times });
-  } catch (error) {
-    console.error("❌ Error in addDeleteSlot:", error);
-    
-    // Handle specific errors
-    if (error.message.includes('Missing required fields')) {
-      return res.status(400).json({ error: error.message });
-    }
-    if (error.message.includes('Invalid type')) {
-      return res.status(400).json({ error: error.message });
-    }
-    if (error.message.includes('not found')) {
-      return res.status(404).json({ error: error.message });
-    }
-
-    res.status(500).json({ error: "Internal server error", details: error.message });
-  }
-}
 
 /**
  * POST /tutor/appointment/accept-or-cancel
@@ -166,18 +109,6 @@ export async function decline(req, res) {
     res.json({ success: true });
   } catch (err) {
     console.error("❌ Error in decline:", err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
-export async function getAppointments(req, res){
-  try{
-    const tutorId = authService.authenticateRequest(req, res);
-    if(!tutorId) return;
-    const appointments = await appointmentService.getAppointmentsByUser(tutorId);
-    res.json({ appointment: appointments });
-  }
-  catch(err){
-    console.error("❌ Error in get appointments:", err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

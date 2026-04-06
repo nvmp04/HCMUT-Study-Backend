@@ -8,54 +8,42 @@ class ScheduleService{
     async getTutorSchedule(id){
         return await tutorScheduleClient.findOne({id});
     }
-    /**
-   * Thêm hoặc xóa slot trong schedule
-   */
-    async addOrDeleteSlot(tutorId, day, time, type) {
-        // Validation
-        if (!day || !time || !type) {
-        throw new Error('Missing required fields: day, time, or type');
+    
+    async addSlot(tutorId, day, time) {
+        if (!day || !time) {
+            throw new Error('Missing required fields: day or time');
         }
-
-        if (!['add', 'delete'].includes(type)) {
-        throw new Error('Invalid type (must be add or delete)');
+        const doc = await scheduleRepository.getTimeSlot(tutorId);
+        if (!doc) throw new Error('Tutor schedule not found');
+        let times = doc[day] || [];
+        if (times.includes(time)) {
+            return { tutorId, day, times, message: "Slot already exists" };
         }
-
-        // Get current schedule
-        const doc = await scheduleRepository.findByTutorId(tutorId);
-        if (!doc) {
-        throw new Error('Tutor schedule not found');
+        times.push(time);
+        times.sort((a, b) => {
+            const hA = parseInt(a.split(":")[0]);
+            const mA = parseInt(a.split(":")[1]);
+            const hB = parseInt(b.split(":")[0]);
+            const mB = parseInt(b.split(":")[1]);
+            return (hA * 60 + mA) - (hB * 60 + mB);
+        });
+        await scheduleRepository.updateDaySchedule(tutorId, day, times);
+        return { tutorId, day, times };
+    }
+    async deleteSlot(tutorId, day, time) {
+        if (!day || !time) {
+            throw new Error('Missing required fields: day or time');
         }
+        const doc = await scheduleRepository.getTimeSlot(tutorId);
+        if (!doc) throw new Error('Tutor schedule not found');
 
         let times = doc[day] || [];
-
-        if (type === 'add') {
-        // Add slot if not exists
-        if (!times.includes(time)) {
-            times.push(time);
+        const newTimes = times.filter(t => t !== time);
+        if (newTimes.length === times.length) {
+            return { tutorId, day, times };
         }
-
-        // Sort times
-        times.sort((a, b) => {
-            const [startA] = a.split(" - ");
-            const [startB] = b.split(" - ");
-            const [hA, mA] = startA.split(":").map(Number);
-            const [hB, mB] = startB.split(":").map(Number);
-            return hA * 60 + mA - (hB * 60 + mB);
-        });
-        } else if (type === 'delete') {
-        // Remove slot
-        times = times.filter(t => t !== time);
-        }
-
-        // Update database
-        await scheduleRepository.updateDaySchedule(tutorId, day, times);
-
-        return {
-        tutorId,
-        day,
-        times
-        };
+        await scheduleRepository.updateDaySchedule(tutorId, day, newTimes);
+        return { tutorId, day, times: newTimes };
     }
 
     async getRawData(tutorId) {
