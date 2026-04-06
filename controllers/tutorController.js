@@ -1,10 +1,8 @@
 import { authService } from "../features/auth/auth.service.js";
 import { appointmentService } from "../features/appointment/appointment.service.js";
-import { scheduleService } from "../features/schedule/schedule.service.js";
 import { notificationService } from "../services/notificationService.js";
 import { tutorRepository } from "../repositories/tutorRepository.js";
 import { unsuccessfulService } from "../services/unsuccessfulService.js";
-import { reportService } from "../services/reportService.js";
 
 /**
  * GET /tutor/data
@@ -109,25 +107,6 @@ export async function decline(req, res) {
     res.json({ success: true });
   } catch (err) {
     console.error("❌ Error in decline:", err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
-export async function reportAppointment(req, res){
-  try{
-    const tutorId = authService.authenticateRequest(req, res);
-    if(!tutorId) return;
-    const { report } = req.body;
-    const result = await appointmentService.reportAppointment(report.sessionId, report);
-    const {studentId, tutorName, title, slotId} = result;
-    await reportService.createReport(studentId, tutorName, title, slotId, report);
-    const io = req.app.get("io");
-    if (io) {
-      notificationService.emitNotification(io, studentId);
-    }
-    res.json({success: true})
-  }
-  catch(err){
-    console.error("❌ Error in report appointments:", err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

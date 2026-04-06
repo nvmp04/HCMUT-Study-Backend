@@ -1,4 +1,4 @@
-import { documentClient } from '../config/db.js';
+import { documentClient } from "../../config/db.js";
 import { ObjectId } from 'mongodb';
 
 class DocumentRepository {

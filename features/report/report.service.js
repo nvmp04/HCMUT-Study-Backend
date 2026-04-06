@@ -1,4 +1,4 @@
-import { reportClient } from "../config/db.js";
+import { reportClient } from "../../config/db.js";
 
 export class ReportService{
     async createReport(studentId, tutorName, title, slotId, report){

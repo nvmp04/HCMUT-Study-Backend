@@ -1,4 +1,4 @@
-import { documentRepository } from '../repositories/documentRepository.js';
+import {documentRepository} from './document.repository.js'
 import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
 import path from 'path';

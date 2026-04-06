@@ -11,11 +11,12 @@ import appointmentRouter from './features/appointment/appointment.routes.js'
 import roadmapRouter from './features/roadmap/roadmap.routes.js'
 import authRouter from './features/auth/auth.routes.js'
 import ratingRouter from './features/rating/rating.routes.js'
+import reportRouter from './features/report/report.routes.js'
+import documentRouter from './features/document/document.routes.js'
 
 import adminRouter from './routes/admin.js'
 import tutorRouter from './routes/tutor.js';
 import notificationRouter from './routes/notification.js';
-import libraryRouter from './routes/library.js'
 
 
 import { connectDB } from './config/db.js';
@@ -82,13 +83,12 @@ app.use('/schedule', scheduleRouter);
 app.use('/auth', authRouter);
 app.use('/roadmap', roadmapRouter);
 app.use('/rating', ratingRouter);
+app.use('/report', reportRouter);
+app.use('/documents', documentRouter);
 
 app.use('/admin', adminRouter);
-
-
 app.use('/tutor', tutorRouter);
 app.use('/notification', notificationRouter);
-app.use('/library', libraryRouter);
 // Start server
 
 const PORT = process.env.PORT || 5000;
