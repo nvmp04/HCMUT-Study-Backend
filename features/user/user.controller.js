@@ -3,12 +3,12 @@ import { userRepository } from "./user.repository.js";
 import { userSevice } from "./user.service.js";
 
 export async function getUserProfile(req, res){
-    const decodedToken = authService.authenticateRequest(req);
-    if (!decodedToken) {
+    const payload = authService.authenticateRequest(req);
+    if (!payload) {
         return res.status(401).json({ message: "Token Expired" });
     }
     try{
-        const user = await userSevice.getUserProfile(decodedToken);
+        const user = await userSevice.getUserProfile(payload);
         res.status(200).json(user);
     }
     catch(err){

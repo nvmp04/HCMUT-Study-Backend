@@ -11,7 +11,6 @@ export async function getTutorSchedule(req, res) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     const tutorId = req.params.id || token.id;
-
     if (!tutorId) {
       return res.status(400).json({ error: 'Tutor ID is required' });
     }
@@ -25,8 +24,8 @@ export async function getTutorSchedule(req, res) {
 
 export async function addSlot(req, res) {
   try {
-    const decoded = authService.authenticateRequest(req, res);
-    const {id} = decoded;
+    const payload = authService.authenticateRequest(req, res);
+    const {id} = payload;
     if (!id) return;
     const { day, time } = req.body;
     const result = await scheduleService.addSlot(id, day, time, 'add');

@@ -1,6 +1,7 @@
 import { jwtDecode } from "jwt-decode";
-import { verifyToken } from "../../core/auth/token.service.js";
-import { checkAuth } from "../../utils/checkAuth.js";
+import { signToken, verifyToken } from "../../core/auth/token.service.js";
+import { checkAuth } from "./auth.util.js";
+import { userSevice } from "../user/user.service.js";
 
 export class AuthService {
   authenticateRequest(req, res) {
@@ -27,8 +28,28 @@ export class AuthService {
     const success = verifyToken(token);
     if (!success) return null;
 
-    const decoded = jwtDecode(token);
-    return decoded.id;
+    const payload = jwtDecode(token);
+    return payload.sub;
+  }
+
+  async tutorAuthentication(sub, roles){
+    try{
+      const tutor = await userSevice.getTutorProfile(sub);
+      if(tutor.statusType === 'active'){
+      //Trả về token đăng nhập mới nếu hồ sơ đã được duyệt
+        const newToken = signToken({
+          sub, roles, currentRole: 'tutor'
+        })
+        return {status: tutor.statusType, token: newToken};
+      }
+      //Trường hợp hồ sơ đang ở trạng thái pending hoặc rejected
+      return {status: tutor.statusType};
+    }
+    catch(err){
+      const statusCode = err.status;
+      if(statusCode === 404) return {status: 'tutor-register'};
+      throw(err);
+    }
   }
 }
 

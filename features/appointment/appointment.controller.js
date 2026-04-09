@@ -4,9 +4,9 @@ import { notificationService } from "../../services/notificationService.js";
 
 export async function getAppointments(req, res) {
     try {
-        const decoded = authService.authenticateRequest(req);
-        if (!decoded) return res.status(401).json({ error: 'Unauthorized' });
-        const { active, history } = await appointmentService.getUserFullSchedule(decoded.id, decoded.role);
+        const payload = authService.authenticateRequest(req);
+        if (!payload) return res.status(401).json({ error: 'Unauthorized' });
+        const { active, history } = await appointmentService.getUserFullSchedule(payload.sub, payload.currentRole);
         res.json({ active, history });
     } catch (err) {
         console.error("Error in getAppointments:", err);
@@ -58,7 +58,8 @@ export async function reschedule(req, res){
 
 export async function accept(req, res) {
   try {
-    const tutorId = authService.authenticateRequest(req, res).id;
+    const payload = authService.authenticateRequest(req, res);
+    const tutorId = payload.sub;
     if (!tutorId) return;
     const { _id, slotId, type, detail } = req.body;
     let result;
@@ -127,13 +128,13 @@ export async function reject(req, res) {
 
 export async function hideCancelled(req, res) {
     try {
-        const decoded = authService.authenticateRequest(req); 
+        const payload = authService.authenticateRequest(req); 
         const { _id} = req.body;
 
         if (!_id) {
             return res.status(400).json({ error: "Thiếu ID lịch học." });
         }
-        await appointmentService.hideHistory(_id, decoded.role);
+        await appointmentService.hideHistory(_id, payload.currentRole);
         
         res.json({ success: true, message: "Đã ẩn lịch khỏi danh sách của bạn." });
     } catch (err) {

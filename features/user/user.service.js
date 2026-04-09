@@ -2,13 +2,9 @@ import { userRepository } from "./user.repository.js";
 
 class UserService{
     //Trả về thông tin của người dùng đang đăng nhập
-    async getUserProfile(decodedToken){
-        const {id, role} = decodedToken;
-        const profileMap = {
-            'student' : () => userRepository.getStudentProfile(id), 
-            'tutor' : () => userRepository.getTutorProfile(id)
-        }
-        const user = await profileMap[role]();
+    async getUserProfile(payload){
+        const {sub} = payload;
+        const user = await userRepository.getStudentProfile(sub);
         if(!user){
             const err = new Error('User not found!');
             err.status = 404;

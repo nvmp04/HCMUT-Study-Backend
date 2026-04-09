@@ -51,9 +51,9 @@ io.use((socket, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    socket.userId = decoded.id;
+    socket.userId = decoded.sub;
     socket.user = decoded;
-    console.log('Token xác thực thành công, User ID:', decoded.id);
+    console.log('Token xác thực thành công, User ID:', decoded.sub);
     next();
   } catch (err) {
     console.log('Token không hợp lệ:', err.message);

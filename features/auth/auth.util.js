@@ -1,4 +1,4 @@
-import { verifyToken } from "../core/auth/token.service.js";
+import { verifyToken } from "../../core/auth/token.service.js";
 
 export function checkAuth(req, res) {
   const authHeader = req.headers.authorization;

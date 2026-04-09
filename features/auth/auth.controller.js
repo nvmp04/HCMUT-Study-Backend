@@ -1,32 +1,36 @@
 import bcrypt from 'bcryptjs';
 import { signToken, verifyToken } from '../../core/auth/token.service.js';
 import { accountClient } from '../../config/db.js';
+import { authService } from './auth.service.js';
 
 export async function login(req, res) {
-  const { username, password, role} = req.body;
-  if (!username || !password) return res.status(400).json({ error: 'username/password required' });
-  const user = await accountClient.findOne({userName: username});
-  if (!user) return res.json({ error: 'invalid credentials' });
-  if(role === 'admin') {
-    if(user.role !== 'admin') return res.json({ error: 'invalid credentials' });
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
   }
-  else{
-    if(user.role === 'admin') return res.json({ error: 'invalid credentials' });
+  const user = await accountClient.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid credentials' });
   }
-  if(user.banned) {
-    res.json({ banned: true });
+  if (user.banned) {
+    return res.status(403).json({ banned: true, message: 'Your account is suspended' });
   }
-  const ok = bcrypt.compareSync(password, user.password);
-  if (!ok) return res.json({ error: 'invalid credentials' });
-  const ssoToken = signToken({
-    id: user.id,
-    role: user.role
+  const isMatch = bcrypt.compareSync(password, user.password);
+  if (!isMatch) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const token = signToken({
+    sub: user._id, 
+    roles: user.roles,
+    currentRole: user.roles[0]
   });
   return res.json({
-    ssoToken,
+    token,
     user: {
       id: user.id,
-      role: user.role
+      email: user.email,
+      roles: user.roles,
+      currentRole: user.roles[0]
     }
   });
 }
@@ -40,5 +44,35 @@ export async function userinfo(req, res) {
     return res.json({ user: payload });
   } catch (err) {
     return res.status(401).json({ error: 'invalid token' });
+  }
+}
+
+export async function tutorMode(req, res) {
+  try {
+    const payload = authService.authenticateRequest(req);
+    if (!payload) {
+      return res.status(401).json({ error: 'Xác thực không hợp lệ hoặc thiếu Token' });
+    }
+    const { sub, roles } = payload;
+    const permission = await authService.tutorAuthentication(sub, roles);
+    const { status, token } = permission;
+    if (!token) {
+      return res.status(200).json({ 
+        status, 
+        canSwitch: false 
+      });
+    }
+    return res.status(200).json({ 
+      token, 
+      canSwitch: true 
+    });
+
+  } catch (error) {
+    console.error(`[Switch Role Error]: ${error.message}`);
+    const statusCode = error?.status;
+    return res.status(statusCode || 500).json({ 
+      error: 'Lỗi hệ thống khi xử lý chuyển đổi vai trò',
+      message: error.message || 'Internal Server error'
+    });
   }
 }
