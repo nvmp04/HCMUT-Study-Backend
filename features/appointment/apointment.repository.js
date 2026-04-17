@@ -1,13 +1,10 @@
 import { appointmentClient } from "../../config/db.js";
 import { ObjectId } from "mongodb";
 export class AppointmentRepository {
-    async findByUserId(id){
-        const query = {
-            $or: [
-                {studentId: id}, 
+    async findByUserId(id, role){
+        const query = 
+                role === 'student' ?  {studentId: id} :
                 {tutorId: id}
-            ]
-        }
         return await appointmentClient.find(query).sort({time: -1}).toArray();
     }
 

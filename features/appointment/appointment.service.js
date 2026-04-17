@@ -10,7 +10,7 @@ export class AppointmentService {
   }
   async getUserFullSchedule(userId, role) {
     const [activeAppointments, historyAppointments] = await Promise.all([
-      appointmentRepository.findByUserId(userId),
+      appointmentRepository.findByUserId(userId, role),
       historyRepository.findByUserId(userId, role) 
     ]);
 
