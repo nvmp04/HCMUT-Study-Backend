@@ -6,7 +6,11 @@ export async function getAppointments(req, res) {
     try {
         const payload = authService.authenticateRequest(req);
         if (!payload) return res.status(401).json({ error: 'Unauthorized' });
-        const { active, history } = await appointmentService.getUserFullSchedule(payload.sub, payload.currentRole);
+        const currentRole = req.headers['x-role'];
+        if(!payload.roles.includes(currentRole)) {
+          return res.status(403).json({message: 'Invalid role'})
+        }
+        const { active, history } = await appointmentService.getUserFullSchedule(payload.sub, currentRole);
         res.json({ active, history });
     } catch (err) {
         console.error("Error in getAppointments:", err);
@@ -130,11 +134,14 @@ export async function hideCancelled(req, res) {
     try {
         const payload = authService.authenticateRequest(req); 
         const { _id} = req.body;
-
+        const currentRole = req.headers['x-role'];
+        if(!payload.roles.includes(currentRole)){
+          return res.status(403).json({message: 'Invalid Role'})
+        }
         if (!_id) {
             return res.status(400).json({ error: "Thiếu ID lịch học." });
         }
-        await appointmentService.hideHistory(_id, payload.currentRole);
+        await appointmentService.hideHistory(_id, currentRole);
         
         res.json({ success: true, message: "Đã ẩn lịch khỏi danh sách của bạn." });
     } catch (err) {

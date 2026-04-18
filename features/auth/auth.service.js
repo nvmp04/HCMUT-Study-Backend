@@ -36,18 +36,13 @@ export class AuthService {
     try{
       const tutor = await userSevice.getTutorProfile(sub);
       if(tutor.statusType === 'active'){
-      //Trả về token đăng nhập mới nếu hồ sơ đã được duyệt
-        const newToken = signToken({
-          sub, roles, currentRole: 'tutor'
-        })
-        return {status: tutor.statusType, token: newToken};
+        return {status: tutor.statusType, canSwitch: true};
       }
       //Trường hợp hồ sơ đang ở trạng thái pending hoặc rejected
-      return {status: tutor.statusType};
+      return {status: tutor.statusType, canSwitch: false};
     }
     catch(err){
       const statusCode = err.status;
-      if(statusCode === 404) return {status: 'tutor-register'};
       throw(err);
     }
   }

@@ -10,7 +10,7 @@ export async function getTutorSchedule(req, res) {
     if (!token) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const tutorId = req.params.id || token.id;
+    const tutorId = req.params.id || token;
     if (!tutorId) {
       return res.status(400).json({ error: 'Tutor ID is required' });
     }

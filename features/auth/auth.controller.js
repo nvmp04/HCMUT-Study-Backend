@@ -21,16 +21,14 @@ export async function login(req, res) {
   }
   const token = signToken({
     sub: user._id, 
-    roles: user.roles,
-    currentRole: user.roles[0]
+    roles: user.roles
   });
   return res.json({
     token,
     user: {
-      id: user.id,
+      id: user._id,
       email: user.email,
-      roles: user.roles,
-      currentRole: user.roles[0]
+      roles: user.roles
     }
   });
 }
@@ -55,21 +53,13 @@ export async function tutorMode(req, res) {
     }
     const { sub, roles } = payload;
     const permission = await authService.tutorAuthentication(sub, roles);
-    const { status, token } = permission;
-    if (!token) {
-      return res.status(200).json({ 
-        status, 
-        canSwitch: false 
-      });
-    }
-    return res.status(200).json({ 
-      token, 
-      canSwitch: true 
-    });
-
+    return res.status(200).json(permission);
   } catch (error) {
-    console.error(`[Switch Role Error]: ${error.message}`);
     const statusCode = error?.status;
+    if(statusCode === 404){
+      return res.status(200).json({status: 'tutor-register', canSwitch: false})
+    }
+    console.error(`[Switch Role Error]: ${error.message}`);
     return res.status(statusCode || 500).json({ 
       error: 'Lỗi hệ thống khi xử lý chuyển đổi vai trò',
       message: error.message || 'Internal Server error'

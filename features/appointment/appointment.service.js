@@ -5,15 +5,11 @@ import { notificationService } from "../../services/notificationService.js";
 import { ObjectId } from "mongodb";
 
 export class AppointmentService {
-  async getUserAppointments(id) {
-    return await appointmentRepository.findByUserId(id);
-  }
   async getUserFullSchedule(userId, role) {
     const [activeAppointments, historyAppointments] = await Promise.all([
       appointmentRepository.findByUserId(userId, role),
       historyRepository.findByUserId(userId, role) 
     ]);
-
     return {
       active: activeAppointments || [],
       history: historyAppointments || []
